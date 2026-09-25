@@ -1,0 +1,62 @@
+TrafficSimulation/
+│
+├── CMakeLists.txt                      # Главный сборочный файл CMake
+├── resources/                          # Ресурсы (иконки, стили QSS, конфиги)
+│   ├── resources.qrc
+│   └── styles/
+│       └── style.qss
+│
+├── src/
+│   ├── main.cpp                        # Точка входа в приложение
+│   │
+│   ├── common/                         # Общие типы, структуры и математика
+│   │   ├── Types.h                     # Перечисления: Phase, TurnDirection, LightColor
+│   │   ├── Vector2D.h                  # Вспомогательный 2D-вектор (координаты, скорость)
+│   │   └── SimulationConfig.h          # Структура параметров (потоки P, видимость D, тайминги K, Z)
+│   │
+│   ├── core/                           # === БЭКЕНД (Модель и логика) ===
+│   │   │                               # Чистая логика моделирования (без привязки к QWidget)
+│   │   ├── entities/                   # Моделируемые сущности
+│   │   │   ├── Vehicle.h / .cpp        # Класс автомобиля (скорость, торможение, координаты, маршрут)
+│   │   │   ├── Pedestrian.h / .cpp     # Класс пешехода (координаты, скорость, статус перехода)
+│   │   │   ├── TrafficLight.h / .cpp   # Класс светофора (состояние, стрелки доп. секций)
+│   │   │   └── Lane.h / .cpp           # Полоса движения (траектория, стоп-линия, очередь авто)
+│   │   │
+│   │   ├── traffic_control/            # Управление фазами и светофорами
+│   │   │   ├── ITrafficLightController.h # Интерфейс контроллера светофоров
+│   │   │   ├── StaticController.h/.cpp # Статический режим (фиксированные интервалы K и Z)
+│   │   │   └── DynamicController.h/.cpp# Адаптивный режим (по числу ожидающих авто/пешеходов)
+│   │   │
+│   │   ├── simulation/                 # Движок симуляции
+│   │   │   ├── Intersection.h / .cpp   # Топология перекрестка (сетка полос, пешеходные переходы)
+│   │   │   ├── TrafficGenerator.h/.cpp # Генератор машин и пешеходов (распределения, интервалы)
+│   │   │   ├── MovementLogic.h / .cpp  # Правила движения (безопасная дистанция, перестроение, торможение)
+│   │   │   └── SimulationEngine.h/.cpp # Главный цикл симуляции: шаг по времени (dt), обновление состояния
+│   │   │
+│   │   └── analytics/                  # Сбор статистики
+│   │       └── StatisticsCollector.h/.cpp # Подсчет заторов, среднего времени ожидания, расхода
+│   │
+│   └── ui/                             # === ФРОНТЕНД (QtWidgets) ===
+│       │                               # Отображение и взаимодействие с пользователем
+│       ├── MainWindow.h / .cpp / .ui   # Главное окно (компоновка виджетов, меню, тулбар)
+│       │
+│       ├── canvas/                     # Поле отрисовки симуляции
+│       │   ├── SimulationView.h / .cpp # QGraphicsView или кастомный QWidget (QPainter)
+│       │   ├── SimulationScene.h/.cpp  # QGraphicsScene (если используется сцена)
+│       │   └── items/                  # Графические элементы (для QGraphicsView)
+│       │       ├── VehicleGraphicsItem.h / .cpp
+│       │       ├── PedestrianGraphicsItem.h / .cpp
+│       │       └── TrafficLightGraphicsItem.h / .cpp
+│       │
+│       ├── panels/                     # Панели управления и параметров (как на макете доски)
+│       │   ├── ControlPanel.h / .cpp   # Кнопки: Старт, Пауза, Сброс, Шаг, скорость симуляции
+│       │   ├── ParametersPanel.h / .cpp# Ползунки и поля ввода (потоки P, D, время K/Z, режим Auto/Man)
+│       │   └── StatsPanel.h / .cpp     # Вывод графиков/чисел (среднее время ожидания, авто в очереди)
+│       │
+│       └── presenter/                  # Посредник / Контроллер (связывает UI и Core)
+│           └── SimulationPresenter.h/.cpp # Передает сигналы таймера, обновляет View из Model
+│
+└── tests/                              # Автотесты логики (Google Test / QTest)
+    ├── CMakeLists.txt
+    ├── test_traffic_generator.cpp
+    └── test_traffic_phases.cpp
