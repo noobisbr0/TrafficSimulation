@@ -1,0 +1,11 @@
+Как команда приступает к работе:
+Фронтенд-разработчик:
+-В MainWindow создает std::make_shared<MockSimulationEngine>() и передает его в SimulationPresenter.   
+-Подписывает метод обновления сцены SimulationScene на сигнал презентера snapshotUpdated(SimulationSnapshot).  
+-Верстает слайдеры параметров (P, D, K, З, T) на панелях управления, собирает из них объект SimulationConfig и отправляет в слот onConfigChanged.
+
+Бэкенд-разработчик:
+-Создает в src/core/simulation/SimulationEngine.h/.cpp класс class SimulationEngine : public ISimulationEngine.   
+-Реализует логику генератора TrafficGenerator, фаз контроллеров DynamicController/StaticController и сбора метрик в StatisticsCollector.   
+-Тестирует ядро симуляции консольными автотестами в папке tests/ без запуска графической среды.   -
+Интеграция:В main.cpp строка std::make_shared<MockSimulationEngine>() заменяется на std::make_shared<SimulationEngine>().
