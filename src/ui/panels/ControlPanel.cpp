@@ -1,32 +1,33 @@
 #include "ControlPanel.h"
+#include "presenter/SimulationPresenter.h"
 #include <QHBoxLayout>
 
 ControlPanel::ControlPanel(SimulationPresenter* presenter, QWidget* parent) : QWidget(parent) {
     auto* layout = new QHBoxLayout(this);
 
-    btnStart = new QPushButton("▶ Старт");
-    btnPause = new QPushButton("⏸ Пауза");
-    btnStep = new QPushButton("⏭ Шаг");
-    btnReset = new QPushButton("⏹ Сброс");
-    cbSpeed = new QComboBox();
+    m_btnStart = new QPushButton("▶ Старт", this);
+    m_btnPause = new QPushButton("⏸ Пауза", this);
+    m_btnStep = new QPushButton("⏭ Шаг", this);
+    m_btnReset = new QPushButton("⏹ Сброс", this);
+    m_cbSpeed = new QComboBox(this);
 
-    cbSpeed->addItems({"0.5x", "1.0x", "2.0x", "5.0x"});
-    cbSpeed->setCurrentIndex(1);
+    m_cbSpeed->addItems({"0.5x", "1.0x", "2.0x", "5.0x"});
+    m_cbSpeed->setCurrentIndex(1);
 
-    layout->addWidget(btnStart);
-    layout->addWidget(btnPause);
-    layout->addWidget(btnStep);
-    layout->addWidget(btnReset);
-    layout->addWidget(cbSpeed);
+    layout->addWidget(m_btnStart);
+    layout->addWidget(m_btnPause);
+    layout->addWidget(m_btnStep);
+    layout->addWidget(m_btnReset);
+    layout->addWidget(m_cbSpeed);
 
-    connect(btnStart, &QPushButton::clicked, presenter, &SimulationPresenter::onStartClicked);
-    connect(btnPause, &QPushButton::clicked, presenter, &SimulationPresenter::onPauseClicked);
-    connect(btnStep,  &QPushButton::clicked, presenter, &SimulationPresenter::onStepClicked);
-    connect(btnReset, &QPushButton::clicked, presenter, &SimulationPresenter::onResetClicked);
+    connect(m_btnStart, &QPushButton::clicked, presenter, &SimulationPresenter::onStartClicked);
+    connect(m_btnPause, &QPushButton::clicked, presenter, &SimulationPresenter::onPauseClicked);
+    connect(m_btnStep,  &QPushButton::clicked, presenter, &SimulationPresenter::onStepClicked);
+    connect(m_btnReset, &QPushButton::clicked, presenter, &SimulationPresenter::onResetClicked);
 
-    connect(cbSpeed, QOverload<int>::of(&QComboBox::currentIndexChanged), [presenter, this](int index) {
-        QString text = cbSpeed->itemText(index);
-        double multiplier = text.remove("x").toDouble();
+    connect(m_cbSpeed, QOverload<int>::of(&QComboBox::currentIndexChanged), [presenter, this](int index) {
+        QString text = m_cbSpeed->itemText(index);
+        const double multiplier = text.remove("x").toDouble();
         presenter->onSimulationSpeedMultiplierChanged(multiplier);
     });
 }

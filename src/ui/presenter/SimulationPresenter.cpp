@@ -1,10 +1,8 @@
 #include "SimulationPresenter.h"
+#include <algorithm>
 
-SimulationPresenter::SimulationPresenter(std::shared_ptr<ISimulationEngine> engine, QObject *parent)
-    : QObject(parent)
-    , m_engine(std::move(engine))
-{
-    // Настройка таймера кадра отрисовки (~33 мс на кадр)
+SimulationPresenter::SimulationPresenter(std::shared_ptr<ISimulationEngine> engine, QObject* parent)
+    : QObject(parent), m_engine(std::move(engine)) {
     connect(&m_tickTimer, &QTimer::timeout, this, &SimulationPresenter::onTimerTick);
 }
 
@@ -33,7 +31,7 @@ void SimulationPresenter::onResetClicked() {
 
 void SimulationPresenter::onStepClicked() {
     if (m_engine) {
-        m_engine->step(m_baseDt * m_speedMultiplier);
+        m_engine->step(kBaseDt * m_speedMultiplier);
         emit snapshotUpdated(m_engine->getSnapshot());
     }
 }
@@ -49,8 +47,9 @@ void SimulationPresenter::onSimulationSpeedMultiplierChanged(double multiplier) 
 }
 
 void SimulationPresenter::onTimerTick() {
-    if (!m_engine) return;
-
-    m_engine->step(m_baseDt * m_speedMultiplier);
+    if (!m_engine) {
+        return;
+    }
+    m_engine->step(kBaseDt * m_speedMultiplier);
     emit snapshotUpdated(m_engine->getSnapshot());
 }

@@ -1,12 +1,15 @@
 #pragma once
+
 #include <QMainWindow>
-#include "presenter/SimulationPresenter.h"
+
+class SimulationPresenter;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow() override;
+
 private:
-    SimulationPresenter* m_presenter;
+    SimulationPresenter* m_presenter{nullptr};
 };

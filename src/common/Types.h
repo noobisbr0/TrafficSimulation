@@ -3,20 +3,17 @@
 #include <cstdint>
 #include "Vector2D.h"
 
-// Режим работы контроллера светофоров
 enum class ControllerMode {
-    Static,   // Статический режим (фиксированные тайминги)
-    Dynamic   // Динамический / адаптивный режим по датчикам очередей
+    Static,
+    Dynamic
 };
 
-// Направления проезда перекрестка автомобилем
 enum class TurnDirection {
-    Straight, // Прямо
-    Left,     // Налево
-    Right     // Направо
+    Straight,
+    Left,
+    Right
 };
 
-// Сигналы светофора
 enum class LightColor {
     Red,
     Yellow,
@@ -25,7 +22,6 @@ enum class LightColor {
     Off
 };
 
-// Идентификаторы светофоров и направлений на перекрестке
 enum class DirectionId {
     North,
     South,
@@ -34,24 +30,23 @@ enum class DirectionId {
 };
 
 struct TrafficLightRenderData {
-    DirectionId direction;
-    LightColor mainColor;
+    DirectionId direction{DirectionId::North};
+    LightColor mainColor{LightColor::Red};
     bool hasLeftArrow{false};
     bool leftArrowGreen{false};
     bool hasRightArrow{false};
     bool rightArrowGreen{false};
 };
 
-// --- Светофор для пешеходов ---
 enum class PedestrianLightSignal {
-    Red,   // Стой
-    Green  // Иди
+    Red,
+    Green
 };
 
 struct PedestrianTrafficLightRenderData {
     int id{0};
-    Vector2D position; // Координата самого угла перекрестка
-    PedestrianLightSignal signalNS{PedestrianLightSignal::Red}; // Сигнал для перехода Север-Юг
-    PedestrianLightSignal signalEW{PedestrianLightSignal::Red}; // Сигнал для перехода Восток-Запад
-    int corner{0}; // 0 - Верхний-Левый, 1 - Верхний-Правый, 2 - Нижний-Левый, 3 - Нижний-Правый
+    Vector2D position;
+    PedestrianLightSignal signalNS{PedestrianLightSignal::Red};
+    PedestrianLightSignal signalEW{PedestrianLightSignal::Red};
+    int corner{0};
 };
