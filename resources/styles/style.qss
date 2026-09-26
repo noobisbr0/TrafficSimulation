@@ -1,0 +1,59 @@
+QMainWindow, QWidget, QScrollArea, QTabWidget {
+    background-color: #1E1E24;
+    color: #ECEFF1;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 13px;
+}
+QDockWidget::title {
+    background: #252836;
+    padding: 6px;
+    border-bottom: 1px solid #3A3F55;
+}
+QGroupBox {
+    border: 1px solid #3A3F55;
+    border-radius: 4px;
+    margin-top: 14px;
+    background-color: #1E1E24;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 5px;
+    color: #3D5AFE;
+}
+QTabWidget::pane {
+    border: 1px solid #3A3F55;
+    background: #1E1E24;
+    border-radius: 4px;
+}
+QTabBar::tab {
+    background: #252836;
+    border: 1px solid #3A3F55;
+    padding: 6px 12px;
+    color: #90A4AE;
+}
+QTabBar::tab:selected {
+    background: #3D5AFE;
+    color: white;
+}
+QSlider::groove:horizontal {
+    height: 6px;
+    background: #3A3F55;
+    border-radius: 3px;
+}
+QSlider::handle:horizontal {
+    background: #3D5AFE;
+    width: 14px;
+    height: 14px;
+    margin: -4px 0;
+    border-radius: 7px;
+}
+QPushButton {
+    background-color: #3D5AFE;
+    color: white;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-weight: bold;
+}
+QPushButton:hover { background-color: #536DFE; }
+QPushButton:pressed { background-color: #304FFE; }
