@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <vector>
 #include "Types.h"
 #include "Vector2D.h"
@@ -14,7 +15,6 @@ struct ColorRGB {
     constexpr ColorRGB(uint8_t red, uint8_t green, uint8_t blue) : r(red), g(green), b(blue) {}
 };
 
-// Данные об автомобиле для отрисовки
 struct VehicleRenderData {
     int id{0};
     Vector2D position;
@@ -24,47 +24,34 @@ struct VehicleRenderData {
     bool isBraking{false};
     bool isWaitingInQueue{false};
 
-    // Кастомный цвет кузова (по умолчанию нулевой/не задан)
     bool hasCustomColor{false};
-    ColorRGB customColor{33, 150, 243}; // Дефолтный синий
+    ColorRGB customColor{33, 150, 243};
 };
 
-// Данные о пешеходе для отрисовки
 struct PedestrianRenderData {
     int id{0};
     Vector2D position;
     bool isWaiting{false};
 
-    // Кастомный цвет пешехода
     bool hasCustomColor{false};
     ColorRGB customColor{0, 230, 118};
 };
 
-// Данные о светофоре для отрисовки
-/*struct TrafficLightRenderData {
-    DirectionId direction{DirectionId::North};
-    LightColor mainColor{LightColor::Red};
-    bool rightArrowGreen{false};
-};*/
-
-// Выходная статистика моделирования
 struct SimulationStats {
-    double averageWaitTimeSec{0.0}; // Среднее время остановки на перекрестке
+    double averageWaitTimeSec{0.0};
     int totalCarsPassed{0};
     int currentCarsInQueue{0};
     double currentSimTimeSec{0.0};
 };
 
-// Полный снимок кадра симуляции
 struct SimulationSnapshot {
     std::vector<VehicleRenderData> vehicles;
     std::vector<PedestrianRenderData> pedestrians;
     std::vector<TrafficLightRenderData> trafficLights;
-    std::vector<PedestrianTrafficLightRenderData> pedestrianLights; // <-- Пешеходные светофоры
+    std::vector<PedestrianTrafficLightRenderData> pedestrianLights;
     SimulationStats stats;
 };
 
-// Контракт ядра симуляции
 class ISimulationEngine {
 public:
     virtual ~ISimulationEngine() = default;
