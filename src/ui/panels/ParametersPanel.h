@@ -36,8 +36,12 @@ private:
     QSlider *slTotalT, *slDistD, *slPedZ, *slPedFlow;
     QLabel *lblTotalT, *lblDistD, *lblPedZ, *lblPedFlow;
 
+    // --- Слайдеры скоростей авто ---
+    QSlider *slMinSpeed, *slMaxSpeed;
+    QLabel *lblMinSpeed, *lblMaxSpeed;
+
     QTabWidget *tabWidget;
-    ApproachUI appr[4]; // Индексы: 0=Север, 1=Юг, 2=Восток, 3=Запад
+    ApproachUI appr[4]; // 0=Север, 1=Юг, 2=Восток, 3=Запад
 
     QWidget* createApproachTab(ApproachUI& uiElements);
     class QHBoxLayout* createSliderRow(const QString& title, int min, int max, int val, QSlider*& sl, QLabel*& lbl);

@@ -17,7 +17,7 @@ struct SimulationConfig {
     ControllerMode mode{ControllerMode::Static};
     IntersectionTopology topology{IntersectionTopology::Lanes_2x2};
 
-    // Уникальные опции по доске (дубликат пешеходной фазы убран)
+    // Уникальные опции по доске
     bool permitLeftTurnFilter{true}; // ВСТР
     bool hasRightTurnArrow{false};   // Стрелка направо
 
@@ -25,6 +25,10 @@ struct SimulationConfig {
     double visibilityDistance{60.0};
     double pedestrianGreenSec{15.0};
     double pedestrianFlow{300.0};
+
+    // --- Диапазон начальной скорости автомобилей (км/ч) ---
+    double minSpeedKmh{30.0};
+    double maxSpeedKmh{80.0};
 
     // Индивидуальные параметры потоков и фаз для каждого светофора
     ApproachParams north, south, east, west;
