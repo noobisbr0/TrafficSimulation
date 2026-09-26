@@ -126,29 +126,56 @@ public:
         bool nsLeft = false;
         bool ewLeft = false;
 
+        // Пешеходные сигналы:
+        // Переходы через дорогу Восток-Запад (северный и южный переходы) зеленые, когда едет поток С-Ю
+        // Переходы через дорогу Север-Юг (западный и восточный переходы) зеленые, когда едет поток В-З
+        PedestrianLightSignal pedsAcrossEW = PedestrianLightSignal::Red;
+        PedestrianLightSignal pedsAcrossNS = PedestrianLightSignal::Red;
+
         if (m_config.permitLeftTurnFilter) {
-            // ВСТР включен: основной зеленый горит вместе со стрелками (стрелок физически нет)
-            if (cycle < 43) { nsColor = LightColor::Green; nsLeft = true; }
-            else if (cycle < 45) { nsColor = LightColor::Yellow; }
+            if (cycle < 43) {
+                nsColor = LightColor::Green;
+                nsLeft = true;
+                pedsAcrossEW = PedestrianLightSignal::Green;
+            } else if (cycle < 45) {
+                nsColor = LightColor::Yellow;
+            }
 
-            if (cycle >= 45 && cycle < 88) { ewColor = LightColor::Green; ewLeft = true; }
-            else if (cycle >= 88 && cycle < 90) { ewColor = LightColor::Yellow; }
+            if (cycle >= 45 && cycle < 88) {
+                ewColor = LightColor::Green;
+                ewLeft = true;
+                pedsAcrossNS = PedestrianLightSignal::Green;
+            } else if (cycle >= 88 && cycle < 90) {
+                ewColor = LightColor::Yellow;
+            }
         } else {
-            // ВСТР выключен (добавлены отдельные фазы, когда едут только поворачивающие налево)
-            if (cycle < 30) { nsColor = LightColor::Green; }
-            else if (cycle < 32) { nsColor = LightColor::Yellow; }
-            else if (cycle >= 32 && cycle < 43) { nsColor = LightColor::Red; nsLeft = true; } // Только налево С-Ю
+            if (cycle < 30) {
+                nsColor = LightColor::Green;
+                pedsAcrossEW = PedestrianLightSignal::Green;
+            } else if (cycle < 32) {
+                nsColor = LightColor::Yellow;
+            } else if (cycle >= 32 && cycle < 43) {
+                nsColor = LightColor::Red;
+                nsLeft = true;
+            }
 
-            if (cycle >= 45 && cycle < 75) { ewColor = LightColor::Green; }
-            else if (cycle >= 75 && cycle < 77) { ewColor = LightColor::Yellow; }
-            else if (cycle >= 77 && cycle < 88) { ewColor = LightColor::Red; ewLeft = true; } // Только налево В-З
+            if (cycle >= 45 && cycle < 75) {
+                ewColor = LightColor::Green;
+                pedsAcrossNS = PedestrianLightSignal::Green;
+            } else if (cycle >= 75 && cycle < 77) {
+                ewColor = LightColor::Yellow;
+            } else if (cycle >= 77 && cycle < 88) {
+                ewColor = LightColor::Red;
+                ewLeft = true;
+            }
         }
 
+        // Автомобильные светофоры
         auto createTL = [&](DirectionId dir, LightColor color, bool leftGreen) {
             TrafficLightRenderData light;
             light.direction = dir;
             light.mainColor = color;
-            light.hasLeftArrow = !m_config.permitLeftTurnFilter; // Стрелки появляются только когда ВСТР выкл
+            light.hasLeftArrow = !m_config.permitLeftTurnFilter;
             light.leftArrowGreen = light.hasLeftArrow && leftGreen;
             return light;
         };
@@ -157,6 +184,13 @@ public:
         snap.trafficLights.push_back(createTL(DirectionId::South, nsColor, nsLeft));
         snap.trafficLights.push_back(createTL(DirectionId::East, ewColor, ewLeft));
         snap.trafficLights.push_back(createTL(DirectionId::West, ewColor, ewLeft));
+        snap.pedestrianLights.push_back({301, Vector2D(-hw_NS, -hw_EW), pedsAcrossEW, pedsAcrossNS, 0});
+
+        snap.pedestrianLights.push_back({302, Vector2D( hw_NS, -hw_EW), pedsAcrossEW, pedsAcrossNS, 1});
+
+        snap.pedestrianLights.push_back({303, Vector2D(-hw_NS,  hw_EW), pedsAcrossEW, pedsAcrossNS, 2});
+
+        snap.pedestrianLights.push_back({304, Vector2D( hw_NS,  hw_EW), pedsAcrossEW, pedsAcrossNS, 3});
 
         return snap;
     }

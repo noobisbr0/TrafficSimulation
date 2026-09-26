@@ -100,6 +100,10 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
     lGlobal->addLayout(createSliderRow("Видимость D (м):", 20, 150, 60, slDistD, lblDistD));
     lGlobal->addLayout(createSliderRow("Пешех. З_п (с):", 5, 60, 15, slPedZ, lblPedZ));
     lGlobal->addLayout(createSliderRow("Поток пеш-в П:", 50, 1000, 300, slPedFlow, lblPedFlow));
+
+    lGlobal->addLayout(createSliderRow("V мин (км/ч):", 20, 140, 30, slMinSpeed, lblMinSpeed));
+    lGlobal->addLayout(createSliderRow("V макс (км/ч):", 20, 140, 80, slMaxSpeed, lblMaxSpeed));
+
     scrollLayout->addWidget(gbGlobal);
     scrollLayout->addStretch();
 
@@ -117,7 +121,8 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
     auto triggerGlobal = [this]() { onGlobalChanged(); queueConfigUpdate(); }; // Было: emitConfig();    connect(rbStatic, &QRadioButton::toggled, this, triggerGlobal);
     connect(cbParallelPeds, &QCheckBox::toggled, this, triggerGlobal);
     connect(cbTopology, QOverload<int>::of(&QComboBox::currentIndexChanged), this, triggerGlobal);
-
+    connect(slMinSpeed, &QSlider::valueChanged, this, triggerGlobal);
+    connect(slMaxSpeed, &QSlider::valueChanged, this, triggerGlobal);
     connect(slTotalT, &QSlider::valueChanged, this, triggerGlobal);
     connect(slDistD, &QSlider::valueChanged, this, triggerGlobal);
     connect(slPedZ, &QSlider::valueChanged, this, triggerGlobal);
@@ -132,10 +137,18 @@ void ParametersPanel::onGlobalChanged() {
     lblPedZ->setText(QString::number(slPedZ->value()));
     lblPedFlow->setText(QString::number(slPedFlow->value()));
 
+    // Защита от пересечения v_min > v_max
+    if (slMinSpeed->value() > slMaxSpeed->value()) {
+        slMaxSpeed->blockSignals(true);
+        slMaxSpeed->setValue(slMinSpeed->value());
+        slMaxSpeed->blockSignals(false);
+    }
+    lblMinSpeed->setText(QString::number(slMinSpeed->value()));
+    lblMaxSpeed->setText(QString::number(slMaxSpeed->value()));
+
     bool isStatic = rbStatic->isChecked();
     slTotalT->setEnabled(isStatic);
 
-    // Блокировка ползунка З_п при автоматическом режиме или когда пешеходы идут параллельно
     bool pedEnabled = isStatic && !cbParallelPeds->isChecked();
     slPedZ->setEnabled(pedEnabled);
 
@@ -180,12 +193,16 @@ void ParametersPanel::emitConfig() {
     config.mode = rbStatic->isChecked() ? ControllerMode::Static : ControllerMode::Dynamic;
     config.topology = static_cast<IntersectionTopology>(cbTopology->currentIndex());
     config.permitLeftTurnFilter = cbLeftTurn->isChecked();
-    config.hasRightTurnArrow = cbParallelPeds->isChecked(); // Передаем состояние чекбокса
+    config.hasRightTurnArrow = cbParallelPeds->isChecked();
 
     config.totalCycleSec = slTotalT->value();
     config.visibilityDistance = slDistD->value();
     config.pedestrianGreenSec = slPedZ->value();
     config.pedestrianFlow = slPedFlow->value();
+
+    // Передаем значения диапазона начальной скорости
+    config.minSpeedKmh = slMinSpeed->value();
+    config.maxSpeedKmh = slMaxSpeed->value();
 
     for(int i = 0; i < 4; i++) {
         ApproachParams ap;

@@ -60,6 +60,7 @@ struct SimulationSnapshot {
     std::vector<VehicleRenderData> vehicles;
     std::vector<PedestrianRenderData> pedestrians;
     std::vector<TrafficLightRenderData> trafficLights;
+    std::vector<PedestrianTrafficLightRenderData> pedestrianLights; // <-- Пешеходные светофоры
     SimulationStats stats;
 };
 

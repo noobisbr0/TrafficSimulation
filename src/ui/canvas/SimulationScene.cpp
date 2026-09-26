@@ -2,6 +2,7 @@
 #include "items/VehicleGraphicsItem.h"
 #include "items/TrafficLightGraphicsItem.h"
 #include "items/PedestrianGraphicsItem.h"
+#include "items/PedestrianTrafficLightGraphicsItem.h" // <-- Добавили
 
 SimulationScene::SimulationScene(QObject* parent) : QGraphicsScene(parent) {
     setSceneRect(-100, -100, 200, 200);
@@ -94,41 +95,46 @@ void SimulationScene::updateState(const SimulationSnapshot& snapshot) {
     }
     m_dynamicItems.clear();
 
-    // 2. Добавляем новые элементы
+    // 1. Автомобильные светофоры
     double hw_NS = (m_config.topology == IntersectionTopology::Lanes_3x3) ? 10.5 : 7.0;
     double hw_EW = (m_config.topology == IntersectionTopology::Lanes_2x2) ? 7.0 : 10.5;
 
     for (const auto& tl : snapshot.trafficLights) {
         auto* item = new TrafficLightGraphicsItem(tl);
-
-        // Отключение поворотов (светофоры всегда направлены вертикально)
         item->setRotation(0);
-
-        // Позиционирование на правой обочине с отступом от зон ожидания пешеходов
         switch (tl.direction) {
-        case DirectionId::North: // Подъезд с севера (автомобили едут вниз)
+        case DirectionId::North:
             item->setPos(-hw_NS - 4.0, -hw_EW - 9.0);
             break;
-        case DirectionId::South: // Подъезд с юга (автомобили едут вверх)
+        case DirectionId::South:
             item->setPos(hw_NS + 4.0, hw_EW + 9.0);
             break;
-        case DirectionId::West:  // Подъезд с запада (автомобили едут вправо)
+        case DirectionId::West:
             item->setPos(-hw_NS - 9.0, hw_EW + 4.0);
             break;
-        case DirectionId::East:  // Подъезд с востока (автомобили едут влево)
+        case DirectionId::East:
             item->setPos(hw_NS + 9.0, -hw_EW - 4.0);
             break;
         }
         addItem(item);
-        m_dynamicItems.append(item); // Сохраняем указатель
+        m_dynamicItems.append(item);
     }
 
-    for (const auto& v : snapshot.vehicles) {
-        auto* item = new VehicleGraphicsItem(v, snapshot.stats.currentSimTimeSec); // Передаем время для поворотников
+    // 2. ПЕШЕХОДНЫЕ СВЕТОФОРЫ
+    for (const auto& ptl : snapshot.pedestrianLights) {
+        auto* item = new PedestrianTrafficLightGraphicsItem(ptl);
         addItem(item);
         m_dynamicItems.append(item);
     }
 
+    // 3. Автомобили
+    for (const auto& v : snapshot.vehicles) {
+        auto* item = new VehicleGraphicsItem(v, snapshot.stats.currentSimTimeSec);
+        addItem(item);
+        m_dynamicItems.append(item);
+    }
+
+    // 4. Пешеходы
     for (const auto& p : snapshot.pedestrians) {
         auto* item = new PedestrianGraphicsItem(p);
         addItem(item);
