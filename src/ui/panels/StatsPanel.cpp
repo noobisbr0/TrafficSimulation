@@ -2,6 +2,64 @@
 #include <QVBoxLayout>
 #include <QGroupBox>
 #include <QLabel>
+#include <QPainter>
+#include <QPainterPath>
+#include <algorithm>
+
+QueueGraphWidget::QueueGraphWidget(QWidget* parent) : QWidget(parent) {
+    setMinimumHeight(120);
+}
+
+void QueueGraphWidget::clear() {
+    m_history.clear();
+    update();
+}
+
+void QueueGraphWidget::addData(double timeSec, int queueSize) {
+    if (!m_history.empty() && timeSec < m_history.back().first) {
+        m_history.clear();
+    }
+
+    m_history.emplace_back(timeSec, queueSize);
+
+    while (!m_history.empty() && (timeSec - m_history.front().first) > 60.0) {
+        m_history.pop_front();
+    }
+    update();
+}
+
+void QueueGraphWidget::paintEvent(QPaintEvent*) {
+    QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.fillRect(rect(), QColor("#1E1E24"));
+    p.setPen(QPen(QColor("#3A3F55"), 1));
+    p.drawRect(0, 0, width() - 1, height() - 1);
+
+    if (m_history.size() < 2) {
+        return;
+    }
+
+    const double minT = m_history.front().first;
+    const double maxT = m_history.back().first;
+    int maxQ = 5;
+    for (const auto& pt : m_history) {
+        maxQ = std::max(maxQ, pt.second);
+    }
+
+    QPainterPath path;
+    for (size_t i = 0; i < m_history.size(); ++i) {
+        const double x = width() * (m_history[i].first - minT) / std::max(1.0, maxT - minT);
+        const double y = height() - (height() * m_history[i].second / (maxQ * 1.2));
+        if (i == 0) {
+            path.moveTo(x, y);
+        } else {
+            path.lineTo(x, y);
+        }
+    }
+
+    p.setPen(QPen(QColor("#3D5AFE"), 2));
+    p.drawPath(path);
+}
 
 StatsPanel::StatsPanel(QWidget* parent) : QWidget(parent) {
     auto* layout = new QVBoxLayout(this);

@@ -4,6 +4,7 @@
 #include <QGroupBox>
 #include <QScrollArea>
 #include <algorithm>
+#include <array>
 
 QHBoxLayout* ParametersPanel::createSliderRow(const QString& title, int min, int max, int val, QSlider*& sl, QLabel*& lbl) {
     auto* h = new QHBoxLayout();
@@ -104,12 +105,8 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
     scrollLayout->addStretch();
 
     connect(m_cbLeftTurn, &QCheckBox::toggled, this, [this](bool checked) {
-        if (checked) {
-            m_cbParallelPeds->setChecked(false);
-            m_cbParallelPeds->setEnabled(false);
-        } else {
-            m_cbParallelPeds->setEnabled(true);
-        }
+        m_cbParallelPeds->setChecked(false);
+        m_cbParallelPeds->setEnabled(!checked);
         onGlobalChanged();
     });
 
@@ -120,7 +117,7 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
 
     connect(m_rbStatic, &QRadioButton::toggled, this, triggerGlobal);
     connect(m_cbParallelPeds, &QCheckBox::toggled, this, triggerGlobal);
-    connect(m_cbTopology, QOverload<int>::of(&QComboBox::currentIndexChanged), this, triggerGlobal);
+    connect(m_cbTopology, &QComboBox::currentIndexChanged, this, triggerGlobal);
     connect(m_slMinSpeed, &QSlider::valueChanged, this, triggerGlobal);
     connect(m_slMaxSpeed, &QSlider::valueChanged, this, triggerGlobal);
     connect(m_slTotalT, &QSlider::valueChanged, this, triggerGlobal);
@@ -138,18 +135,15 @@ void ParametersPanel::onGlobalChanged() {
     m_lblPedFlow->setText(QString::number(m_slPedFlow->value()));
 
     if (m_slMinSpeed->value() > m_slMaxSpeed->value()) {
-        m_slMaxSpeed->blockSignals(true);
+        const QSignalBlocker blocker(m_slMaxSpeed);
         m_slMaxSpeed->setValue(m_slMinSpeed->value());
-        m_slMaxSpeed->blockSignals(false);
     }
     m_lblMinSpeed->setText(QString::number(m_slMinSpeed->value()));
     m_lblMaxSpeed->setText(QString::number(m_slMaxSpeed->value()));
 
     const bool isStatic = m_rbStatic->isChecked();
     m_slTotalT->setEnabled(isStatic);
-
-    const bool pedEnabled = isStatic && !m_cbParallelPeds->isChecked();
-    m_slPedZ->setEnabled(pedEnabled);
+    m_slPedZ->setEnabled(isStatic && !m_cbParallelPeds->isChecked());
 
     for (int i = 0; i < 4; ++i) {
         m_approaches[i].slZ->setEnabled(isStatic);
@@ -168,18 +162,16 @@ void ParametersPanel::onTabSlidersChanged() {
         nPhases += 1;
     }
 
-    int maxZ = (totalT / nPhases) - 5;
-    if (maxZ < 10) {
-        maxZ = 10;
-    }
+    const int maxZ = std::max(10, (totalT / nPhases) - 5);
 
     for (int i = 0; i < 4; ++i) {
-        m_approaches[i].slZ->blockSignals(true);
-        m_approaches[i].slZ->setMaximum(maxZ);
-        if (m_approaches[i].slZ->value() > maxZ) {
-            m_approaches[i].slZ->setValue(maxZ);
+        {
+            const QSignalBlocker blocker(m_approaches[i].slZ);
+            m_approaches[i].slZ->setMaximum(maxZ);
+            if (m_approaches[i].slZ->value() > maxZ) {
+                m_approaches[i].slZ->setValue(maxZ);
+            }
         }
-        m_approaches[i].slZ->blockSignals(false);
 
         m_approaches[i].lblP->setText(QString::number(m_approaches[i].slP->value()));
         m_approaches[i].lblZ->setText(QString::number(m_approaches[i].slZ->value()));
@@ -187,11 +179,12 @@ void ParametersPanel::onTabSlidersChanged() {
         const int greenZ = m_approaches[i].slZ->value();
         const int redK = std::max(5, (totalT / nPhases) - greenZ);
 
-        m_approaches[i].slK->blockSignals(true);
-        m_approaches[i].slK->setMaximum(totalT);
-        m_approaches[i].slK->setValue(redK);
+        {
+            const QSignalBlocker blocker(m_approaches[i].slK);
+            m_approaches[i].slK->setMaximum(totalT);
+            m_approaches[i].slK->setValue(redK);
+        }
         m_approaches[i].lblK->setText(QString::number(redK) + " (авто)");
-        m_approaches[i].slK->blockSignals(false);
     }
     queueConfigUpdate();
 }
@@ -211,15 +204,12 @@ void ParametersPanel::emitConfig() {
     config.minSpeedKmh = m_slMinSpeed->value();
     config.maxSpeedKmh = m_slMaxSpeed->value();
 
-    for (int i = 0; i < 4; ++i) {
-        ApproachParams ap;
-        ap.flowP = m_approaches[i].slP->value();
-        ap.greenZ = m_approaches[i].slZ->value();
-        ap.redK = m_approaches[i].slK->value();
-        if (i == 0) config.north = ap;
-        else if (i == 1) config.south = ap;
-        else if (i == 2) config.east = ap;
-        else if (i == 3) config.west = ap;
+    std::array<ApproachParams*, 4> targets = {&config.north, &config.south, &config.east, &config.west};
+    for (size_t i = 0; i < targets.size(); ++i) {
+        targets[i]->flowP = m_approaches[i].slP->value();
+        targets[i]->greenZ = m_approaches[i].slZ->value();
+        targets[i]->redK = m_approaches[i].slK->value();
     }
+
     emit configChanged(config);
 }

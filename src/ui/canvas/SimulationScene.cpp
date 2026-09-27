@@ -9,6 +9,14 @@ SimulationScene::SimulationScene(QObject* parent) : QGraphicsScene(parent) {
     drawRoadInfrastructure();
 }
 
+double SimulationScene::halfRoadWidthNS() const {
+    return (m_config.topology == IntersectionTopology::Lanes_3x3) ? 10.5 : 7.0;
+}
+
+double SimulationScene::halfRoadWidthEW() const {
+    return (m_config.topology == IntersectionTopology::Lanes_2x2) ? 7.0 : 10.5;
+}
+
 void SimulationScene::updateConfig(const SimulationConfig& config) {
     m_config = config;
     drawRoadInfrastructure();
@@ -33,19 +41,17 @@ void SimulationScene::drawRoadInfrastructure() {
     m_dynamicItems.clear();
     setBackgroundBrush(QColor("#1E1E24"));
 
-    const double hw_NS = (m_config.topology == IntersectionTopology::Lanes_3x3) ? 10.5 : 7.0;
-    const double hw_EW = (m_config.topology == IntersectionTopology::Lanes_2x2) ? 7.0 : 10.5;
+    const double hw_NS = halfRoadWidthNS();
+    const double hw_EW = halfRoadWidthEW();
 
     QPainterPath sidewalks;
-    const double cr = 3.5;
-    sidewalks.addRoundedRect(-100, -100, 100 - hw_NS, 100 - hw_EW, cr, cr);
-    sidewalks.addRoundedRect(hw_NS, -100, 100 - hw_NS, 100 - hw_EW, cr, cr);
-    sidewalks.addRoundedRect(-100, hw_EW, 100 - hw_NS, 100 - hw_EW, cr, cr);
-    sidewalks.addRoundedRect(hw_NS, hw_EW, 100 - hw_NS, 100 - hw_EW, cr, cr);
+    constexpr double cornerRadius = 3.5;
+    sidewalks.addRoundedRect(-100, -100, 100 - hw_NS, 100 - hw_EW, cornerRadius, cornerRadius);
+    sidewalks.addRoundedRect(hw_NS, -100, 100 - hw_NS, 100 - hw_EW, cornerRadius, cornerRadius);
+    sidewalks.addRoundedRect(-100, hw_EW, 100 - hw_NS, 100 - hw_EW, cornerRadius, cornerRadius);
+    sidewalks.addRoundedRect(hw_NS, hw_EW, 100 - hw_NS, 100 - hw_EW, cornerRadius, cornerRadius);
 
-    const QPen curbPen(QColor("#3A3F55"), 0.8);
-    const QBrush sidewalkBrush(QColor("#252836"));
-    addPath(sidewalks, curbPen, sidewalkBrush);
+    addPath(sidewalks, QPen(QColor("#3A3F55"), 0.8), QBrush(QColor("#252836")));
 
     QPainterPath roads;
     roads.setFillRule(Qt::WindingFill);
@@ -94,12 +100,11 @@ void SimulationScene::updateState(const SimulationSnapshot& snapshot) {
     }
     m_dynamicItems.clear();
 
-    const double hw_NS = (m_config.topology == IntersectionTopology::Lanes_3x3) ? 10.5 : 7.0;
-    const double hw_EW = (m_config.topology == IntersectionTopology::Lanes_2x2) ? 7.0 : 10.5;
+    const double hw_NS = halfRoadWidthNS();
+    const double hw_EW = halfRoadWidthEW();
 
     for (const auto& tl : snapshot.trafficLights) {
         auto* item = new TrafficLightGraphicsItem(tl);
-        item->setRotation(0);
         switch (tl.direction) {
         case DirectionId::North:
             item->setPos(-hw_NS - 4.0, -hw_EW - 9.0);

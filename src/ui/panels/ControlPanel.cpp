@@ -25,9 +25,9 @@ ControlPanel::ControlPanel(SimulationPresenter* presenter, QWidget* parent) : QW
     connect(m_btnStep,  &QPushButton::clicked, presenter, &SimulationPresenter::onStepClicked);
     connect(m_btnReset, &QPushButton::clicked, presenter, &SimulationPresenter::onResetClicked);
 
-    connect(m_cbSpeed, QOverload<int>::of(&QComboBox::currentIndexChanged), [presenter, this](int index) {
+    connect(m_cbSpeed, &QComboBox::currentIndexChanged, [presenter, this](int index) {
         QString text = m_cbSpeed->itemText(index);
-        const double multiplier = text.remove("x").toDouble();
-        presenter->onSimulationSpeedMultiplierChanged(multiplier);
+        text.remove('x');
+        presenter->onSimulationSpeedMultiplierChanged(text.toDouble());
     });
 }

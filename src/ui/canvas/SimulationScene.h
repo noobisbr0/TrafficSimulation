@@ -18,6 +18,9 @@ public slots:
     void updateConfig(const SimulationConfig& config);
 
 private:
+    [[nodiscard]] double halfRoadWidthNS() const;
+    [[nodiscard]] double halfRoadWidthEW() const;
+
     SimulationConfig m_config;
     QList<QGraphicsItem*> m_dynamicItems;
 };
