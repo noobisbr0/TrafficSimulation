@@ -16,7 +16,7 @@ void TrafficLightGraphicsItem::paint(QPainter* painter, const QStyleOptionGraphi
 
     painter->setPen(QPen(Qt::black, 0.1));
     painter->setBrush(QColor("#111115"));
-    painter->drawRoundedRect(-1.2, -3.2, 2.4, 6.4, 0.5, 0.5);
+    painter->drawRoundedRect(QRectF(-1.2, -3.2, 2.4, 6.4), 0.5, 0.5);
 
     auto drawLens = [&](double x, double y, LightColor color, LightColor activeColor) {
         bool isActive = (m_data.mainColor == color || m_data.mainColor == LightColor::RedYellow);
@@ -24,8 +24,9 @@ void TrafficLightGraphicsItem::paint(QPainter* painter, const QStyleOptionGraphi
             isActive = true;
         }
 
-        const QColor activeHex = (activeColor == LightColor::Red) ? QColor("#FF1744") :
-                                     (activeColor == LightColor::Yellow) ? QColor("#FFEA00") : QColor("#00E676");
+        const QColor activeHex = (activeColor == LightColor::Red)    ? QColor("#FF1744") :
+                                     (activeColor == LightColor::Yellow) ? QColor("#FFEA00") :
+                                     QColor("#00E676");
         painter->setBrush(isActive ? activeHex : QColor("#2B2D42"));
         painter->drawEllipse(QRectF(x - 0.8, y - 0.8, 1.6, 1.6));
     };
@@ -36,7 +37,7 @@ void TrafficLightGraphicsItem::paint(QPainter* painter, const QStyleOptionGraphi
 
     if (m_data.hasLeftArrow) {
         painter->setBrush(QColor("#111115"));
-        painter->drawRoundedRect(-3.2, 1.0, 2.0, 2.0, 0.3, 0.3);
+        painter->drawRoundedRect(QRectF(-3.2, 1.0, 2.0, 2.0), 0.3, 0.3);
 
         const bool active = m_data.leftArrowGreen;
         painter->setBrush(active ? QColor("#00E676") : QColor("#2B2D42"));
