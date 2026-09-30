@@ -1,27 +1,33 @@
 #pragma once
-
 #include "Types.h"
 
+enum class IntersectionTopology {
+    Lanes_2x2,
+    Lanes_2x3,
+    Lanes_3x3
+};
+
+struct ApproachParams {
+    int flowP{600};
+    int greenZ{30};
+    int redK{60};
+};
+
 struct SimulationConfig {
-    // Режим управления светофорами (Auto / Man)
     ControllerMode mode{ControllerMode::Static};
+    IntersectionTopology topology{IntersectionTopology::Lanes_2x2};
 
-    // Параметры автомобильного потока
-    double carSpawnIntervalMin{2.0}; // Интервал появления авто (P)
-    double carSpawnIntervalMax{6.0};
-    double minSpeedKmH{30.0};        // Диапазон возможных скоростей (30-120 км/ч)
-    double maxSpeedKmH{90.0};
-    double visibilityDistance{60.0}; // Дистанция видимости светофора (D)
+    // Уникальные опции по доске (дубликат пешеходной фазы убран)
+    bool permitLeftTurnFilter{true}; // ВСТР
+    bool hasRightTurnArrow{false};   // Стрелка направо
 
-    // Параметры таймингов светофоров
-    double redDurationSec{20.0};     // Длительность красного (К)
-    double greenDurationSec{25.0};   // Длительность зеленого (З)
-    double totalCycleSec{60.0};      // Общая длина цикла фаз (Т)
+    double totalCycleSec{90.0};
+    double visibilityDistance{60.0};
+    double pedestrianGreenSec{15.0};
+    double pedestrianFlow{300.0};
 
-    // Параметры пешеходов
-    double pedestrianSpawnInterval{10.0}; // Поток пешеходов (П)
-    double pedestrianGreenSec{15.0};      // Зеленый для пешеходов (ЗдП)
+    // Индивидуальные параметры потоков и фаз для каждого светофора
+    ApproachParams north, south, east, west;
 
-    // Шаг физического времени моделирования
     double timeStepDt{0.05};
 };
