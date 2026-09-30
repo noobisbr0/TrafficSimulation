@@ -31,3 +31,12 @@ enum class DirectionId {
     East,
     West
 };
+
+struct TrafficLightRenderData {
+    DirectionId direction;
+    LightColor mainColor;
+    bool hasLeftArrow{false};
+    bool leftArrowGreen{false};
+    bool hasRightArrow{false};
+    bool rightArrowGreen{false};
+};
