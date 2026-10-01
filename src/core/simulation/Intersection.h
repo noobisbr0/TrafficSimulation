@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <map>
 
 #include "Vector2D.h"
 #include "../entities/Lane.h"
@@ -12,14 +13,16 @@ public:
 
   Vector2D getCenter() const;
 
-  void addLane(Lane* lane);
+  void addLane(DirectionId direction, Lane* lane);
   void addTrafficLight(TrafficLight* trafficLight);
 
   const std::vector<Lane*>& getLanes() const;
+  const std::vector<Lane*>& getLanes(DirectionId direction) const;
   const std::vector<TrafficLight*>& getTrafficLights() const;
 
 private:
   Vector2D m_center;
   std::vector<Lane*> m_lanes;
+  std::map<DirectionId, std::vector<Lane*>> m_lanesByDirection;
   std::vector<TrafficLight*> m_trafficLights;
 };
