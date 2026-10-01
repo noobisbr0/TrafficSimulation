@@ -31,13 +31,20 @@ MainWindow::MainWindow(QWidget* parent)
     auto* rightDock = new QDockWidget("Параметры", this);
     rightDock->setWidget(paramPanel);
     rightDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+    rightDock->setMinimumWidth(280);
+    rightDock->setMaximumWidth(320);
     addDockWidget(Qt::RightDockWidgetArea, rightDock);
 
     auto* leftDock = new QDockWidget("Управление и Аналитика", this);
     auto* leftWidget = new QWidget();
     auto* leftLayout = new QVBoxLayout(leftWidget);
+
+    // ИСПРАВЛЕНИЕ: Формируем макет левой панели
     leftLayout->addWidget(ctrlPanel);
+    leftLayout->addWidget(paramPanel->getGlobalWidget()); // Вставляем глобальные ползунки сюда
     leftLayout->addWidget(statsPanel);
+    leftLayout->addStretch(); // Чтобы элементы не растягивались на весь экран
+
     leftDock->setWidget(leftWidget);
     addDockWidget(Qt::LeftDockWidgetArea, leftDock);
 

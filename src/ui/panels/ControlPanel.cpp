@@ -1,33 +1,67 @@
 #include "ControlPanel.h"
 #include "presenter/SimulationPresenter.h"
 #include <QHBoxLayout>
+#include <QIcon>
 
 ControlPanel::ControlPanel(SimulationPresenter* presenter, QWidget* parent) : QWidget(parent) {
     auto* layout = new QHBoxLayout(this);
+    layout->setSpacing(0); // Группировка плеера: убираем отступы между кнопками[cite: 2]
 
-    m_btnStart = new QPushButton("▶ Старт", this);
-    m_btnPause = new QPushButton("⏸ Пауза", this);
-    m_btnStep = new QPushButton("⏭ Шаг", this);
-    m_btnReset = new QPushButton("⏹ Сброс", this);
-    m_cbSpeed = new QComboBox(this);
 
-    m_cbSpeed->addItems({"0.5x", "1.0x", "2.0x", "5.0x"});
-    m_cbSpeed->setCurrentIndex(1);
+    // Замена кнопок на иконки и перенос текста в ToolTip[cite: 2]
+    m_btnStart = new QPushButton(this);
+    m_btnStart->setIcon(QIcon(":/icons/play.svg"));
+    m_btnStart->setToolTip("Старт симуляции");
+    m_btnStart->setObjectName("btnGroupLeft");
+
+    m_btnPause = new QPushButton(this);
+    m_btnPause->setIcon(QIcon(":/icons/pause.svg"));
+    m_btnPause->setToolTip("Пауза");
+    m_btnPause->setObjectName("btnGroupMiddle");
+
+    m_btnStep = new QPushButton(this);
+    m_btnStep->setIcon(QIcon(":/icons/step_forward.svg"));
+    m_btnStep->setToolTip("Шаг");
+    m_btnStep->setObjectName("btnGroupMiddle");
+
+    m_btnReset = new QPushButton(this);
+    m_btnReset->setIcon(QIcon(":/icons/stop.svg"));
+    m_btnReset->setToolTip("Сброс");
+    m_btnReset->setObjectName("btnGroupRight");
+
+    // Замена QComboBox на QDoubleSpinBox[cite: 2]
+    m_sbSpeed = new QDoubleSpinBox(this);
+    m_sbSpeed->setRange(0.1, 5.0);
+    m_sbSpeed->setSingleStep(0.1);
+    m_sbSpeed->setValue(1.0);
+    m_sbSpeed->setSuffix("x");
+
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->addStretch();
 
     layout->addWidget(m_btnStart);
     layout->addWidget(m_btnPause);
     layout->addWidget(m_btnStep);
     layout->addWidget(m_btnReset);
+
     layout->addWidget(m_cbSpeed);
+
+
+    auto* rightLayout = new QHBoxLayout();
+    rightLayout->setContentsMargins(10, 0, 0, 0); // Отступ слева от кнопок
+    rightLayout->addWidget(m_sbSpeed);
+    layout->addLayout(rightLayout);
+    layout->addStretch();
+
 
     connect(m_btnStart, &QPushButton::clicked, presenter, &SimulationPresenter::onStartClicked);
     connect(m_btnPause, &QPushButton::clicked, presenter, &SimulationPresenter::onPauseClicked);
     connect(m_btnStep,  &QPushButton::clicked, presenter, &SimulationPresenter::onStepClicked);
     connect(m_btnReset, &QPushButton::clicked, presenter, &SimulationPresenter::onResetClicked);
 
-    connect(m_cbSpeed, &QComboBox::currentIndexChanged, [presenter, this](int index) {
-        QString text = m_cbSpeed->itemText(index);
-        text.remove('x');
-        presenter->onSimulationSpeedMultiplierChanged(text.toDouble());
-    });
+
+
+
+    connect(m_sbSpeed, &QDoubleSpinBox::valueChanged, presenter, &SimulationPresenter::onSimulationSpeedMultiplierChanged);
+
 }

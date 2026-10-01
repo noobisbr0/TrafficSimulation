@@ -1,34 +1,85 @@
 #include "ParametersPanel.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QFormLayout>
 #include <QGroupBox>
-#include <QScrollArea>
+#include <QFrame>
+#include <QIcon>
+#include <QListView>
 #include <algorithm>
 #include <array>
+#include <QLabel>
 
-QHBoxLayout* ParametersPanel::createSliderRow(const QString& title, int min, int max, int val, QSlider*& sl, QLabel*& lbl) {
+void ParametersPanel::addSliderRow(QFormLayout* layout, const QString& title, int min, int max, int val, QSlider*& sl, QSpinBox*& sb) {
     auto* h = new QHBoxLayout();
+
+    h->setContentsMargins(0, 0, 0, 0);
+    h->setSpacing(6);
+
     sl = new QSlider(Qt::Horizontal, this);
     sl->setRange(min, max);
     sl->setValue(val);
-    lbl = new QLabel(QString::number(val), this);
-    lbl->setMinimumWidth(35);
-    h->addWidget(new QLabel(title, this));
+
+    sb = new QSpinBox(this);
+    sb->setRange(min, max);
+    sb->setValue(val);
+    sb->setFixedWidth(60);
+
+    connect(sl, &QSlider::valueChanged, sb, &QSpinBox::setValue);
+    connect(sb, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged), sl, &QSlider::setValue);
+
     h->addWidget(sl);
-    h->addWidget(lbl);
-    return h;
+    h->addWidget(sb);
+    layout->addRow(title, h);
 }
 
 QWidget* ParametersPanel::createApproachTab(ApproachUI& uiElements) {
     auto* w = new QWidget(this);
-    auto* l = new QVBoxLayout(w);
-    l->addLayout(createSliderRow("Поток P (авт/ч):", 100, 2000, 600, uiElements.slP, uiElements.lblP));
-    l->addLayout(createSliderRow("Зеленый Z (с):", 10, 120, 30, uiElements.slZ, uiElements.lblZ));
-    l->addLayout(createSliderRow("Красный K (с):", 10, 120, 60, uiElements.slK, uiElements.lblK));
-    uiElements.slK->setEnabled(false);
+    auto* l = new QFormLayout(w);
+    l->setContentsMargins(0, 0, 0, 0);
+    l->setVerticalSpacing(2);
+    l->setHorizontalSpacing(6);
 
-    connect(uiElements.slP, &QSlider::valueChanged, this, &ParametersPanel::onTabSlidersChanged);
-    connect(uiElements.slZ, &QSlider::valueChanged, this, &ParametersPanel::onTabSlidersChanged);
+    addSliderRow(l, "Поток P (авт/ч):", 100, 2000, 600, uiElements.slP, uiElements.sbP);
+    addSliderRow(l, "Зеленый Z (с):", 5, 180, 30, uiElements.slZ, uiElements.sbZ);
+    addSliderRow(l, "Красный K (с):", 5, 180, 60, uiElements.slK, uiElements.sbK);
+
+    connect(uiElements.slP, &QSlider::valueChanged, this, [this]() {
+        queueConfigUpdate();
+    });
+
+    // Движение ЗЕЛЕНОГО ползунка
+    connect(uiElements.slZ, &QSlider::valueChanged, this, [this, uiElements](int val) {
+        int nPhases = 2;
+        if (!m_cbLeftTurn->isChecked()) nPhases += 2;
+        if (!m_cbParallelPeds->isChecked()) nPhases += 1;
+
+        int tPhase = m_slTotalT->value() / nPhases;
+        int newK = tPhase - val;
+
+        const QSignalBlocker bK(uiElements.slK), bKsb(uiElements.sbK);
+        uiElements.slK->setValue(newK);
+        uiElements.sbK->setValue(newK);
+
+        queueConfigUpdate();
+    });
+
+    // Движение КРАСНОГО ползунка
+    connect(uiElements.slK, &QSlider::valueChanged, this, [this, uiElements](int val) {
+        int nPhases = 2;
+        if (!m_cbLeftTurn->isChecked()) nPhases += 2;
+        if (!m_cbParallelPeds->isChecked()) nPhases += 1;
+
+        int tPhase = m_slTotalT->value() / nPhases;
+        int newZ = tPhase - val;
+
+        const QSignalBlocker bZ(uiElements.slZ), bZsb(uiElements.sbZ);
+        uiElements.slZ->setValue(newZ);
+        uiElements.sbZ->setValue(newZ);
+
+        queueConfigUpdate();
+    });
+
     return w;
 }
 
@@ -43,66 +94,89 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
     connect(m_debounceTimer, &QTimer::timeout, this, &ParametersPanel::emitConfig);
 
     auto* mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
 
-    auto* scroll = new QScrollArea(this);
-    auto* scrollWidget = new QWidget();
-    auto* scrollLayout = new QVBoxLayout(scrollWidget);
-    scroll->setWidgetResizable(true);
-    scroll->setWidget(scrollWidget);
-    mainLayout->addWidget(scroll);
+    mainLayout->setContentsMargins(5, 5, 5, 5);
+    this->setObjectName("scrollBg");
+
+
 
     auto* gbMode = new QGroupBox("Настройки перекрестка", this);
     auto* lMode = new QVBoxLayout(gbMode);
 
     auto* modeRow = new QHBoxLayout();
-    m_rbStatic = new QRadioButton("Статический (Man)", this);
-    m_rbDynamic = new QRadioButton("Адаптивный (Auto)", this);
+
+    m_rbStatic = new QRadioButton("Статический", this);
+    m_rbDynamic = new QRadioButton("Адаптивный", this);
     m_rbStatic->setChecked(true);
     modeRow->addWidget(m_rbStatic);
+    modeRow->addStretch();
     modeRow->addWidget(m_rbDynamic);
+    modeRow->addSpacing(10);
+
     lMode->addLayout(modeRow);
 
+    auto* line = new QFrame();
+    line->setFrameShape(QFrame::HLine);
+    line->setFrameShadow(QFrame::Sunken);
+    lMode->addWidget(line);
+
     auto* topRow = new QHBoxLayout();
+
     topRow->addWidget(new QLabel("Топология:", this));
+    topRow->addStretch();
     m_cbTopology = new QComboBox(this);
+    m_cbTopology->setView(new QListView(this));
     m_cbTopology->addItems({"2+2", "2+3 (Асимметрия)", "3+3"});
+    m_cbTopology->setFixedWidth(160);
     topRow->addWidget(m_cbTopology);
+    topRow->addSpacing(10);
+
     lMode->addLayout(topRow);
 
     m_cbLeftTurn = new QCheckBox("ВСТР (Просачивание налево)", this);
     m_cbParallelPeds = new QCheckBox("Пешеходы в фазе с авто", this);
-
     m_cbLeftTurn->setChecked(true);
     m_cbParallelPeds->setChecked(false);
     m_cbParallelPeds->setEnabled(false);
 
     lMode->addWidget(m_cbLeftTurn);
     lMode->addWidget(m_cbParallelPeds);
-    scrollLayout->addWidget(gbMode);
+    mainLayout->addWidget(gbMode);
 
     auto* gbApproaches = new QGroupBox("Светофоры (Тайминги)", this);
     auto* lApproaches = new QVBoxLayout(gbApproaches);
-    m_tabWidget = new QTabWidget(this);
-    m_tabWidget->addTab(createApproachTab(m_approaches[0]), "Север");
-    m_tabWidget->addTab(createApproachTab(m_approaches[1]), "Юг");
-    m_tabWidget->addTab(createApproachTab(m_approaches[2]), "Восток");
-    m_tabWidget->addTab(createApproachTab(m_approaches[3]), "Запад");
-    lApproaches->addWidget(m_tabWidget);
-    scrollLayout->addWidget(gbApproaches);
 
-    auto* gbGlobal = new QGroupBox("Глобальные параметры", this);
-    auto* lGlobal = new QVBoxLayout(gbGlobal);
-    lGlobal->addLayout(createSliderRow("Общий цикл T (с):", 30, 180, 90, m_slTotalT, m_lblTotalT));
-    lGlobal->addLayout(createSliderRow("Видимость D (м):", 20, 150, 60, m_slDistD, m_lblDistD));
-    lGlobal->addLayout(createSliderRow("Пешех. З_п (с):", 5, 60, 15, m_slPedZ, m_lblPedZ));
-    lGlobal->addLayout(createSliderRow("Поток пеш-в П:", 50, 1000, 300, m_slPedFlow, m_lblPedFlow));
+    lApproaches->setSpacing(2);
+    lApproaches->setContentsMargins(8, 4, 8, 6);
 
-    lGlobal->addLayout(createSliderRow("V мин (км/ч):", 20, 140, 30, m_slMinSpeed, m_lblMinSpeed));
-    lGlobal->addLayout(createSliderRow("V макс (км/ч):", 20, 140, 80, m_slMaxSpeed, m_lblMaxSpeed));
+    auto addDirection = [&](int index, const QString& title) {
+        if (index > 0) {
+            lApproaches->addSpacing(8);
+        }
+        auto* lbl = new QLabel(title, this);
+        lbl->setObjectName("approachTitle");
+        lApproaches->addWidget(lbl);
+        lApproaches->addWidget(createApproachTab(m_approaches[index]));
+    };
 
-    scrollLayout->addWidget(gbGlobal);
-    scrollLayout->addStretch();
+    addDirection(0, "↑ Север");
+    addDirection(1, "↓ Юг");
+    addDirection(2, "→ Восток");
+    addDirection(3, "← Запад");
+
+    mainLayout->addWidget(gbApproaches);
+
+    m_globalWidget = new QGroupBox("Глобальные параметры");
+    auto* lGlobal = new QFormLayout(m_globalWidget);
+    addSliderRow(lGlobal, "Общий цикл T (с):", 30, 180, 90, m_slTotalT, m_sbTotalT);
+    addSliderRow(lGlobal, "Видимость D (м):", 20, 150, 60, m_slDistD, m_sbDistD);
+    addSliderRow(lGlobal, "Пешех. З_п (с):", 5, 60, 15, m_slPedZ, m_sbPedZ);
+    addSliderRow(lGlobal, "Поток пеш-в П:", 50, 1000, 300, m_slPedFlow, m_sbPedFlow);
+    addSliderRow(lGlobal, "V мин (км/ч):", 20, 140, 30, m_slMinSpeed, m_sbMinSpeed);
+    addSliderRow(lGlobal, "V макс (км/ч):", 20, 140, 80, m_slMaxSpeed, m_sbMaxSpeed);
+
+    mainLayout->addStretch();
+
 
     connect(m_cbLeftTurn, &QCheckBox::toggled, this, [this](bool checked) {
         m_cbParallelPeds->setChecked(false);
@@ -115,11 +189,28 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
         queueConfigUpdate();
     };
 
+
     connect(m_rbStatic, &QRadioButton::toggled, this, triggerGlobal);
     connect(m_cbParallelPeds, &QCheckBox::toggled, this, triggerGlobal);
     connect(m_cbTopology, &QComboBox::currentIndexChanged, this, triggerGlobal);
-    connect(m_slMinSpeed, &QSlider::valueChanged, this, triggerGlobal);
-    connect(m_slMaxSpeed, &QSlider::valueChanged, this, triggerGlobal);
+
+    // Взаимная коррекция Vmin и Vmax
+    connect(m_slMinSpeed, &QSlider::valueChanged, this, [this](int val) {
+        if (val > m_slMaxSpeed->value()) {
+            m_slMaxSpeed->setValue(val);
+        }
+        onGlobalChanged();
+        queueConfigUpdate();
+    });
+
+    connect(m_slMaxSpeed, &QSlider::valueChanged, this, [this](int val) {
+        if (val < m_slMinSpeed->value()) {
+            m_slMinSpeed->setValue(val);
+        }
+        onGlobalChanged();
+        queueConfigUpdate();
+    });
+
     connect(m_slTotalT, &QSlider::valueChanged, this, triggerGlobal);
     connect(m_slDistD, &QSlider::valueChanged, this, triggerGlobal);
     connect(m_slPedZ, &QSlider::valueChanged, this, triggerGlobal);
@@ -129,10 +220,13 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
 }
 
 void ParametersPanel::onGlobalChanged() {
-    m_lblTotalT->setText(QString::number(m_slTotalT->value()));
-    m_lblDistD->setText(QString::number(m_slDistD->value()));
-    m_lblPedZ->setText(QString::number(m_slPedZ->value()));
-    m_lblPedFlow->setText(QString::number(m_slPedFlow->value()));
+
+
+    lblTotalT->setText(QString::number(slTotalT->value()));
+    lblDistD->setText(QString::number(slDistD->value()));
+    lblPedZ->setText(QString::number(slPedZ->value()));
+    lblPedFlow->setText(QString::number(slPedFlow->value()));
+
 
     if (m_slMinSpeed->value() > m_slMaxSpeed->value()) {
         const QSignalBlocker blocker(m_slMaxSpeed);
@@ -145,46 +239,62 @@ void ParametersPanel::onGlobalChanged() {
     m_slTotalT->setEnabled(isStatic);
     m_slPedZ->setEnabled(isStatic && !m_cbParallelPeds->isChecked());
 
+
+
+    for (int i = 0; i < 4; ++i) appr[i].slZ->setEnabled(isStatic);
+
+    const QSignalBlocker b1(m_sbTotalT), b2(m_sbDistD), b3(m_sbPedZ), b4(m_sbPedFlow);
+    m_sbTotalT->setValue(m_slTotalT->value());
+    m_sbDistD->setValue(m_slDistD->value());
+    m_sbPedZ->setValue(m_slPedZ->value());
+    m_sbPedFlow->setValue(m_slPedFlow->value());
+
+    const QSignalBlocker b5(m_sbMinSpeed), b6(m_sbMaxSpeed);
+    m_sbMinSpeed->setValue(m_slMinSpeed->value());
+    m_sbMaxSpeed->setValue(m_slMaxSpeed->value());
+
+    const bool isStatic = m_rbStatic->isChecked();
+    m_slTotalT->setEnabled(isStatic);
+    m_sbTotalT->setEnabled(isStatic);
+    m_slPedZ->setEnabled(isStatic && !m_cbParallelPeds->isChecked());
+    m_sbPedZ->setEnabled(isStatic && !m_cbParallelPeds->isChecked());
+
     for (int i = 0; i < 4; ++i) {
         m_approaches[i].slZ->setEnabled(isStatic);
+        m_approaches[i].sbZ->setEnabled(isStatic);
+        m_approaches[i].slK->setEnabled(isStatic);
+        m_approaches[i].sbK->setEnabled(isStatic);
     }
+
     onTabSlidersChanged();
 }
 
 void ParametersPanel::onTabSlidersChanged() {
-    const int totalT = m_slTotalT->value();
 
     int nPhases = 2;
-    if (!m_cbLeftTurn->isChecked()) {
-        nPhases += 2;
-    }
-    if (!m_cbParallelPeds->isChecked()) {
-        nPhases += 1;
-    }
+    if (!m_cbLeftTurn->isChecked()) nPhases += 2;
+    if (!m_cbParallelPeds->isChecked()) nPhases += 1;
 
-    const int maxZ = std::max(10, (totalT / nPhases) - 5);
+    int tPhase = m_slTotalT->value() / nPhases;
+    int maxVal = std::max(5, tPhase - 5);
 
     for (int i = 0; i < 4; ++i) {
-        {
-            const QSignalBlocker blocker(m_approaches[i].slZ);
-            m_approaches[i].slZ->setMaximum(maxZ);
-            if (m_approaches[i].slZ->value() > maxZ) {
-                m_approaches[i].slZ->setValue(maxZ);
-            }
-        }
+        auto& app = m_approaches[i];
 
-        m_approaches[i].lblP->setText(QString::number(m_approaches[i].slP->value()));
-        m_approaches[i].lblZ->setText(QString::number(m_approaches[i].slZ->value()));
+        const QSignalBlocker bZ(app.slZ), bZsb(app.sbZ);
+        const QSignalBlocker bK(app.slK), bKsb(app.sbK);
 
-        const int greenZ = m_approaches[i].slZ->value();
-        const int redK = std::max(5, (totalT / nPhases) - greenZ);
+        app.slZ->setRange(5, maxVal);
+        app.sbZ->setRange(5, maxVal);
+        app.slK->setRange(5, maxVal);
+        app.sbK->setRange(5, maxVal);
 
-        {
-            const QSignalBlocker blocker(m_approaches[i].slK);
-            m_approaches[i].slK->setMaximum(totalT);
-            m_approaches[i].slK->setValue(redK);
-        }
-        m_approaches[i].lblK->setText(QString::number(redK) + " (авто)");
+        int currentZ = app.slZ->value();
+        int currentK = tPhase - currentZ;
+
+        app.slK->setValue(currentK);
+        app.sbK->setValue(currentK);
+
     }
     queueConfigUpdate();
 }
