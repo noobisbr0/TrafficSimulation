@@ -12,7 +12,6 @@
 
 void ParametersPanel::addSliderRow(QFormLayout* layout, const QString& title, int min, int max, int val, QSlider*& sl, QSpinBox*& sb) {
     auto* h = new QHBoxLayout();
-
     h->setContentsMargins(0, 0, 0, 0);
     h->setSpacing(6);
 
@@ -94,17 +93,13 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
     connect(m_debounceTimer, &QTimer::timeout, this, &ParametersPanel::emitConfig);
 
     auto* mainLayout = new QVBoxLayout(this);
-
     mainLayout->setContentsMargins(5, 5, 5, 5);
     this->setObjectName("scrollBg");
-
-
 
     auto* gbMode = new QGroupBox("Настройки перекрестка", this);
     auto* lMode = new QVBoxLayout(gbMode);
 
     auto* modeRow = new QHBoxLayout();
-
     m_rbStatic = new QRadioButton("Статический", this);
     m_rbDynamic = new QRadioButton("Адаптивный", this);
     m_rbStatic->setChecked(true);
@@ -112,7 +107,6 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
     modeRow->addStretch();
     modeRow->addWidget(m_rbDynamic);
     modeRow->addSpacing(10);
-
     lMode->addLayout(modeRow);
 
     auto* line = new QFrame();
@@ -121,7 +115,6 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
     lMode->addWidget(line);
 
     auto* topRow = new QHBoxLayout();
-
     topRow->addWidget(new QLabel("Топология:", this));
     topRow->addStretch();
     m_cbTopology = new QComboBox(this);
@@ -145,7 +138,6 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
 
     auto* gbApproaches = new QGroupBox("Светофоры (Тайминги)", this);
     auto* lApproaches = new QVBoxLayout(gbApproaches);
-
     lApproaches->setSpacing(2);
     lApproaches->setContentsMargins(8, 4, 8, 6);
 
@@ -177,7 +169,6 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
 
     mainLayout->addStretch();
 
-
     connect(m_cbLeftTurn, &QCheckBox::toggled, this, [this](bool checked) {
         m_cbParallelPeds->setChecked(false);
         m_cbParallelPeds->setEnabled(!checked);
@@ -188,7 +179,6 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
         onGlobalChanged();
         queueConfigUpdate();
     };
-
 
     connect(m_rbStatic, &QRadioButton::toggled, this, triggerGlobal);
     connect(m_cbParallelPeds, &QCheckBox::toggled, this, triggerGlobal);
@@ -220,29 +210,6 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
 }
 
 void ParametersPanel::onGlobalChanged() {
-
-
-    lblTotalT->setText(QString::number(slTotalT->value()));
-    lblDistD->setText(QString::number(slDistD->value()));
-    lblPedZ->setText(QString::number(slPedZ->value()));
-    lblPedFlow->setText(QString::number(slPedFlow->value()));
-
-
-    if (m_slMinSpeed->value() > m_slMaxSpeed->value()) {
-        const QSignalBlocker blocker(m_slMaxSpeed);
-        m_slMaxSpeed->setValue(m_slMinSpeed->value());
-    }
-    m_lblMinSpeed->setText(QString::number(m_slMinSpeed->value()));
-    m_lblMaxSpeed->setText(QString::number(m_slMaxSpeed->value()));
-
-    const bool isStatic = m_rbStatic->isChecked();
-    m_slTotalT->setEnabled(isStatic);
-    m_slPedZ->setEnabled(isStatic && !m_cbParallelPeds->isChecked());
-
-
-
-    for (int i = 0; i < 4; ++i) appr[i].slZ->setEnabled(isStatic);
-
     const QSignalBlocker b1(m_sbTotalT), b2(m_sbDistD), b3(m_sbPedZ), b4(m_sbPedFlow);
     m_sbTotalT->setValue(m_slTotalT->value());
     m_sbDistD->setValue(m_slDistD->value());
@@ -265,12 +232,10 @@ void ParametersPanel::onGlobalChanged() {
         m_approaches[i].slK->setEnabled(isStatic);
         m_approaches[i].sbK->setEnabled(isStatic);
     }
-
     onTabSlidersChanged();
 }
 
 void ParametersPanel::onTabSlidersChanged() {
-
     int nPhases = 2;
     if (!m_cbLeftTurn->isChecked()) nPhases += 2;
     if (!m_cbParallelPeds->isChecked()) nPhases += 1;
@@ -294,7 +259,6 @@ void ParametersPanel::onTabSlidersChanged() {
 
         app.slK->setValue(currentK);
         app.sbK->setValue(currentK);
-
     }
     queueConfigUpdate();
 }
