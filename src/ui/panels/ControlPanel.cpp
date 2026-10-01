@@ -5,10 +5,8 @@
 
 ControlPanel::ControlPanel(SimulationPresenter* presenter, QWidget* parent) : QWidget(parent) {
     auto* layout = new QHBoxLayout(this);
-    layout->setSpacing(0); // Группировка плеера: убираем отступы между кнопками[cite: 2]
+    layout->setSpacing(0);
 
-
-    // Замена кнопок на иконки и перенос текста в ToolTip[cite: 2]
     m_btnStart = new QPushButton(this);
     m_btnStart->setIcon(QIcon(":/icons/play.svg"));
     m_btnStart->setToolTip("Старт симуляции");
@@ -29,7 +27,6 @@ ControlPanel::ControlPanel(SimulationPresenter* presenter, QWidget* parent) : QW
     m_btnReset->setToolTip("Сброс");
     m_btnReset->setObjectName("btnGroupRight");
 
-    // Замена QComboBox на QDoubleSpinBox[cite: 2]
     m_sbSpeed = new QDoubleSpinBox(this);
     m_sbSpeed->setRange(0.1, 5.0);
     m_sbSpeed->setSingleStep(0.1);
@@ -48,20 +45,15 @@ ControlPanel::ControlPanel(SimulationPresenter* presenter, QWidget* parent) : QW
 
 
     auto* rightLayout = new QHBoxLayout();
-    rightLayout->setContentsMargins(10, 0, 0, 0); // Отступ слева от кнопок
+    rightLayout->setContentsMargins(10, 0, 0, 0);
     rightLayout->addWidget(m_sbSpeed);
     layout->addLayout(rightLayout);
     layout->addStretch();
-
 
     connect(m_btnStart, &QPushButton::clicked, presenter, &SimulationPresenter::onStartClicked);
     connect(m_btnPause, &QPushButton::clicked, presenter, &SimulationPresenter::onPauseClicked);
     connect(m_btnStep,  &QPushButton::clicked, presenter, &SimulationPresenter::onStepClicked);
     connect(m_btnReset, &QPushButton::clicked, presenter, &SimulationPresenter::onResetClicked);
 
-
-
-
     connect(m_sbSpeed, &QDoubleSpinBox::valueChanged, presenter, &SimulationPresenter::onSimulationSpeedMultiplierChanged);
-
 }
