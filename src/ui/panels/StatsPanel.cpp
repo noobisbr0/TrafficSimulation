@@ -1,11 +1,11 @@
 #include "StatsPanel.h"
 #include <QVBoxLayout>
-#include <QGridLayout> // Изменение макета на QGridLayout[cite: 2]
+#include <QGridLayout>
 #include <QGroupBox>
 #include <QLabel>
 #include <QPainter>
 #include <QPainterPath>
-#include <QLinearGradient> // Использование градиента для графика[cite: 2]
+#include <QLinearGradient>
 #include <algorithm>
 
 QueueGraphWidget::QueueGraphWidget(QWidget* parent) : QWidget(parent) {
@@ -36,7 +36,6 @@ void QueueGraphWidget::paintEvent(QPaintEvent*) {
     p.setPen(QPen(QColor("#3A3F55"), 1));
     p.drawRect(0, 0, width() - 1, height() - 1);
 
-    // Отрисовка бледной сетки[cite: 2]
     p.setPen(QPen(QColor(255, 255, 255, 25), 1));
     for (int i = 1; i < 4; ++i) {
         int yLine = height() * i / 4;
@@ -57,7 +56,6 @@ void QueueGraphWidget::paintEvent(QPaintEvent*) {
         maxQ = std::max(maxQ, pt.second);
     }
 
-    // Текст с указанием оси Y[cite: 2]
     p.setPen(QColor("#90A4AE"));
     p.drawText(5, 15, QString("Max Y: %1").arg(maxQ));
 
@@ -83,9 +81,8 @@ void QueueGraphWidget::paintEvent(QPaintEvent*) {
     fillPath.lineTo(width(), height());
     fillPath.closeSubpath();
 
-    // Градиент заливки[cite: 2]
     QLinearGradient gradient(0, 0, 0, height());
-    gradient.setColorAt(0.0, QColor(61, 90, 254, 100)); // #3D5AFE alpha 100
+    gradient.setColorAt(0.0, QColor(61, 90, 254, 100));
     gradient.setColorAt(1.0, QColor(61, 90, 254, 0));
     p.fillPath(fillPath, gradient);
 
@@ -93,15 +90,12 @@ void QueueGraphWidget::paintEvent(QPaintEvent*) {
     p.drawPath(path);
 }
 
-
-
 StatsPanel::StatsPanel(QWidget* parent) : QWidget(parent) {
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     auto* gb = new QGroupBox("Статистика (В реальном времени)", this);
     auto* l = new QVBoxLayout(gb);
 
-    // Дашборд сеткой[cite: 2]
     auto* grid = new QGridLayout();
     grid->setSpacing(5);
 
@@ -132,8 +126,6 @@ StatsPanel::StatsPanel(QWidget* parent) : QWidget(parent) {
     l->addWidget(new QLabel("Динамика очередей (последние 60с):", this));
     l->addWidget(m_graph);
 
-
-
     layout->addWidget(gb);
     layout->addStretch();
 }
@@ -153,5 +145,7 @@ void StatsPanel::updateStats(const SimulationSnapshot& snap) {
     m_lblQueue->setText(QString::number(snap.stats.currentCarsInQueue));
     m_lblPassed->setText(QString::number(snap.stats.totalCarsPassed));
 
-    m_graph->addData(snap.stats.currentSimTimeSec, snap.stats.currentCarsInQueue);
+    if (m_graph) {
+        m_graph->addData(snap.stats.currentSimTimeSec, snap.stats.currentCarsInQueue);
+    }
 }
