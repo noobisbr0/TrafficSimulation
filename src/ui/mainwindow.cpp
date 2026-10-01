@@ -39,11 +39,10 @@ MainWindow::MainWindow(QWidget* parent)
     auto* leftWidget = new QWidget();
     auto* leftLayout = new QVBoxLayout(leftWidget);
 
-    // ИСПРАВЛЕНИЕ: Формируем макет левой панели
     leftLayout->addWidget(ctrlPanel);
-    leftLayout->addWidget(paramPanel->getGlobalWidget()); // Вставляем глобальные ползунки сюда
+    leftLayout->addWidget(paramPanel->getGlobalWidget());
     leftLayout->addWidget(statsPanel);
-    leftLayout->addStretch(); // Чтобы элементы не растягивались на весь экран
+    leftLayout->addStretch();
 
     leftDock->setWidget(leftWidget);
     addDockWidget(Qt::LeftDockWidgetArea, leftDock);
