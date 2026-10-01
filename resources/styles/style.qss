@@ -6,14 +6,12 @@ QMainWindow, QDockWidget, QScrollArea, QTabWidget {
     font-size: 13px;
 }
 
-
-/* 2. Исправление темного текста: принудительно делаем текст светлым */
+/* 2. Текст и индикаторы */
 QLabel, QCheckBox, QRadioButton {
     color: #ECEFF1;
     background: transparent;
 }
 
-/* ИСПРАВЛЕНИЕ: Аккуратные чекбоксы без "заливок" и жирных белых рамок */
 QCheckBox::indicator, QRadioButton::indicator {
     width: 14px;
     height: 14px;
@@ -23,11 +21,11 @@ QCheckBox::indicator, QRadioButton::indicator {
 }
 
 QRadioButton::indicator {
-    border-radius: 7px; /* Круглые для радио */
+    border-radius: 7px;
 }
 
 QCheckBox::indicator {
-    border-radius: 3px; /* Квадратные для чекбоксов */
+    border-radius: 3px;
 }
 
 QCheckBox::indicator:hover, QRadioButton::indicator:hover {
@@ -44,16 +42,16 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled {
     background: transparent;
 }
 
-/* 3. Исправление белого фона на правой панели */
+/* 3. Фоны панелей и доков */
 QWidget#scrollBg, ParametersPanel {
     background-color: #1E1E24;
 }
+
 QScrollArea {
     border: none;
     background-color: #1E1E24;
 }
 
-/* Подложки доков */
 QDockWidget > QWidget {
     background-color: #1E1E24;
 }
@@ -101,18 +99,20 @@ QSpinBox, QDoubleSpinBox, QComboBox {
     padding: 2px 4px;
 }
 
-/* Принудительно отключаем всплывающее меню со скроллерами */
+/* Принудительно отключаем всплывающее меню со служебными скроллерами */
 QComboBox {
     combobox-popup: 0;
 }
 
-QSpinBox::up-button, QSpinBox::down-button, 
+QSpinBox::up-button, QSpinBox::down-button,
 QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {
-    width: 0px; 
+    width: 0px;
 }
+
 QComboBox::drop-down {
     border: none;
 }
+
 QComboBox QAbstractItemView {
     background-color: #252836;
     color: #ECEFF1;
@@ -121,6 +121,7 @@ QComboBox QAbstractItemView {
     outline: none;
     padding: 0px;
 }
+
 QComboBox QAbstractItemView::item {
     min-height: 24px;
     padding: 2px 8px;
@@ -170,14 +171,17 @@ QScrollBar:vertical {
     width: 10px;
     margin: 0px;
 }
+
 QScrollBar::handle:vertical {
     background: #3A3F55;
     min-height: 20px;
     border-radius: 5px;
 }
+
 QScrollBar::handle:vertical:hover {
     background: #536DFE;
 }
+
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     height: 0px;
 }
@@ -200,10 +204,12 @@ QPushButton#btnGroupLeft {
     border-bottom-left-radius: 6px;
     border-right: 1px solid #283593;
 }
+
 QPushButton#btnGroupMiddle {
     border-radius: 0px;
     border-right: 1px solid #283593;
 }
+
 QPushButton#btnGroupRight {
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
