@@ -21,8 +21,7 @@ void QueueGraphWidget::addData(double timeSec, int queueSize) {
     if (!m_history.empty() && timeSec < m_history.back().first) {
         m_history.clear();
     }
-m_history.emplace_back(timeSec, queueSize);
-
+    m_history.emplace_back(timeSec, queueSize);
     while (!m_history.empty() && (timeSec - m_history.front().first) > 60.0) {
         m_history.pop_front();
     }
@@ -48,7 +47,6 @@ void QueueGraphWidget::paintEvent(QPaintEvent*) {
 
     if (m_history.size() < 2) return;
 
-
     const double minT = m_history.front().first;
     const double maxT = m_history.back().first;
     int maxQ = 5;
@@ -64,13 +62,11 @@ void QueueGraphWidget::paintEvent(QPaintEvent*) {
 
     fillPath.moveTo(0, height());
 
-
     for (size_t i = 0; i < m_history.size(); ++i) {
         const double x = width() * (m_history[i].first - minT) / std::max(1.0, maxT - minT);
         const double y = height() - (height() * m_history[i].second / (maxQ * 1.2));
         if (i == 0) {
             path.moveTo(x, y);
-
             fillPath.lineTo(x, y);
         } else {
             path.lineTo(x, y);
@@ -131,7 +127,6 @@ StatsPanel::StatsPanel(QWidget* parent) : QWidget(parent) {
 }
 
 void StatsPanel::resetStats() {
-
     m_lblWaitTime->setText("0.0 с");
     m_lblQueue->setText("0");
     m_lblPassed->setText("0");
