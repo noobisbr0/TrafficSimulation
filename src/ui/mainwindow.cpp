@@ -7,9 +7,9 @@
 #include "presenter/SimulationPresenter.h"
 #include "common/MockSimulationEngine.h"
 
-#include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QDockWidget>
+#include <QGroupBox>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent) {
