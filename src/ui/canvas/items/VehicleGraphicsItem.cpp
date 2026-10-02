@@ -11,7 +11,7 @@ VehicleGraphicsItem::VehicleGraphicsItem(const VehicleRenderData& data, double s
 }
 
 QRectF VehicleGraphicsItem::boundingRect() const {
-    return QRectF(-2.25, -0.9, 4.5, 1.8);
+    return QRectF(-2.3, -1.05, 4.6, 2.1);
 }
 
 void VehicleGraphicsItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*) {
@@ -34,12 +34,64 @@ void VehicleGraphicsItem::paint(QPainter* painter, const QStyleOptionGraphicsIte
         }
     }
 
-    QPainterPath path;
-    path.addRoundedRect(boundingRect(), 0.5, 0.5);
-    painter->fillPath(path, bodyColor);
-    painter->setPen(QPen(Qt::white, 0.1));
-    painter->drawPath(path);
+    // 1. Корпус автомобиля (кузов 4.5м x 1.8м)
+    const QRectF bodyRect(-2.25, -0.9, 4.5, 1.8);
+    QPainterPath bodyPath;
+    bodyPath.addRoundedRect(bodyRect, 0.5, 0.5);
+    painter->fillPath(bodyPath, bodyColor);
+    painter->setPen(QPen(bodyColor.darker(140), 0.08));
+    painter->drawPath(bodyPath);
 
+    // 2. Боковые зеркала
+    painter->setBrush(bodyColor.darker(115));
+    painter->setPen(QPen(bodyColor.darker(145), 0.04));
+    painter->drawRoundedRect(QRectF(0.55, -1.02, 0.24, 0.12), 0.04, 0.04);
+    painter->drawRoundedRect(QRectF(0.55, 0.90, 0.24, 0.12), 0.04, 0.04);
+
+    // 3. Остекление
+    const QColor glassColor("#151D28");
+    const QPen glassPen(QColor("#0D121A"), 0.05);
+
+    // Лобовое стекло
+    QPainterPath windshield;
+    windshield.moveTo(0.25, -0.66);
+    windshield.lineTo(0.70, -0.56);
+    windshield.quadTo(0.80, 0.0, 0.70, 0.56);
+    windshield.lineTo(0.25, 0.66);
+    windshield.closeSubpath();
+
+    painter->setPen(glassPen);
+    painter->setBrush(glassColor);
+    painter->drawPath(windshield);
+
+    // Блик на лобовом стекле
+    painter->setPen(QPen(QColor(255, 255, 255, 65), 0.08, Qt::SolidLine, Qt::RoundCap));
+    painter->drawLine(QPointF(0.38, -0.38), QPointF(0.58, -0.14));
+
+    // Заднее стекло
+    QPainterPath rearWindow;
+    rearWindow.moveTo(-0.85, -0.66);
+    rearWindow.lineTo(-1.30, -0.58);
+    rearWindow.quadTo(-1.37, 0.0, -1.30, 0.58);
+    rearWindow.lineTo(-0.85, 0.66);
+    rearWindow.closeSubpath();
+
+    painter->setPen(glassPen);
+    painter->setBrush(glassColor);
+    painter->drawPath(rearWindow);
+
+    // Боковые окна
+    painter->setBrush(glassColor);
+    painter->setPen(glassPen);
+    painter->drawRect(QRectF(-0.82, -0.68, 1.04, 0.10));
+    painter->drawRect(QRectF(-0.82, 0.58, 1.04, 0.10));
+
+    // Крыша
+    painter->setBrush(bodyColor.lighter(106));
+    painter->setPen(QPen(bodyColor.darker(125), 0.05));
+    painter->drawRoundedRect(QRectF(-0.82, -0.58, 1.04, 1.16), 0.15, 0.15);
+
+    // 4. Оптика и сигналы
     constexpr double w = 0.35;
     constexpr double h = 0.35;
     constexpr double xRear = -2.20;
@@ -52,18 +104,21 @@ void VehicleGraphicsItem::paint(QPainter* painter, const QStyleOptionGraphicsIte
     const QRectF frontLeft(xFront, yLeft, w, h);
     const QRectF frontRight(xFront, yRight, w, h);
 
-    if (m_data.isBraking) {
-        painter->setBrush(QColor("#FF1744"));
-        painter->setPen(Qt::NoPen);
-        painter->drawRoundedRect(rearLeft, 0.15, 0.15);
-        painter->drawRoundedRect(rearRight, 0.15, 0.15);
-    }
+    // Передние фары
+    painter->setBrush(QColor("#ECEFF1"));
+    painter->setPen(Qt::NoPen);
+    painter->drawRoundedRect(frontLeft, 0.15, 0.15);
+    painter->drawRoundedRect(frontRight, 0.15, 0.15);
 
+    // Задние стоп-сигналы / габариты
+    painter->setBrush(m_data.isBraking ? QColor("#FF1744") : QColor("#80121D"));
+    painter->drawRoundedRect(rearLeft, 0.15, 0.15);
+    painter->drawRoundedRect(rearRight, 0.15, 0.15);
+
+    // Указатели поворота
     const bool blinkOn = std::fmod(m_simTime, 0.66) < 0.33;
     if (blinkOn && m_data.turnDirection != TurnDirection::Straight) {
         painter->setBrush(QColor("#FFD600"));
-        painter->setPen(Qt::NoPen);
-
         if (m_data.turnDirection == TurnDirection::Left) {
             painter->drawRoundedRect(frontLeft, 0.15, 0.15);
             painter->drawRoundedRect(rearLeft, 0.15, 0.15);
