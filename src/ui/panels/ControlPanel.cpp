@@ -35,14 +35,10 @@ ControlPanel::ControlPanel(SimulationPresenter* presenter, QWidget* parent) : QW
 
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addStretch();
-
     layout->addWidget(m_btnStart);
     layout->addWidget(m_btnPause);
     layout->addWidget(m_btnStep);
     layout->addWidget(m_btnReset);
-
-    layout->addWidget(m_cbSpeed);
-
 
     auto* rightLayout = new QHBoxLayout();
     rightLayout->setContentsMargins(10, 0, 0, 0);
