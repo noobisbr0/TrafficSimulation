@@ -123,7 +123,6 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
     m_cbTopology->setFixedWidth(160);
     topRow->addWidget(m_cbTopology);
     topRow->addSpacing(10);
-
     lMode->addLayout(topRow);
 
     m_cbLeftTurn = new QCheckBox("ВСТР (Просачивание налево)", this);

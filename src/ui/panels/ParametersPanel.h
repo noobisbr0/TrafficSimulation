@@ -12,8 +12,6 @@
 #include <qgroupbox.h>
 #include "common/SimulationConfig.h"
 
-class QHBoxLayout;
-
 class ParametersPanel : public QWidget {
     Q_OBJECT
 public:
