@@ -1,22 +1,23 @@
 #pragma once
 
 #include <QWidget>
-#include <QSlider>
-#include <QSpinBox>
-#include <QCheckBox>
-#include <QRadioButton>
-#include <QComboBox>
-#include <QTabWidget>
-#include <QTimer>
-#include <QFormLayout>
-#include <qgroupbox.h>
+#include <QGroupBox>
+#include <array>
 #include "common/SimulationConfig.h"
+
+class QSlider;
+class QSpinBox;
+class QCheckBox;
+class QRadioButton;
+class QComboBox;
+class QTimer;
+class QFormLayout;
 
 class ParametersPanel : public QWidget {
     Q_OBJECT
 public:
     explicit ParametersPanel(QWidget* parent = nullptr);
-    QGroupBox* getGlobalWidget() const { return m_globalWidget; }
+    [[nodiscard]] QGroupBox* getGlobalWidget() const { return m_globalWidget; }
 
 signals:
     void configChanged(const SimulationConfig& config);
@@ -39,6 +40,7 @@ private:
 
     QWidget* createApproachTab(ApproachUI& uiElements);
     void addSliderRow(QFormLayout* layout, const QString& title, int min, int max, int val, QSlider*& sl, QSpinBox*& sb);
+    [[nodiscard]] int calculatePhaseCount() const;
 
     QTimer* m_debounceTimer{nullptr};
     QRadioButton* m_rbStatic{nullptr};
@@ -63,5 +65,5 @@ private:
     QSpinBox* m_sbMaxSpeed{nullptr};
 
     QGroupBox* m_globalWidget{nullptr};
-    ApproachUI m_approaches[4];
+    std::array<ApproachUI, 4> m_approaches{};
 };

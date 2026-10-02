@@ -4,11 +4,15 @@
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QFrame>
-#include <QIcon>
 #include <QListView>
-#include <algorithm>
-#include <array>
 #include <QLabel>
+#include <QSlider>
+#include <QSpinBox>
+#include <QCheckBox>
+#include <QRadioButton>
+#include <QComboBox>
+#include <QTimer>
+#include <algorithm>
 
 void ParametersPanel::addSliderRow(QFormLayout* layout, const QString& title, int min, int max, int val, QSlider*& sl, QSpinBox*& sb) {
     auto* h = new QHBoxLayout();
@@ -32,6 +36,17 @@ void ParametersPanel::addSliderRow(QFormLayout* layout, const QString& title, in
     layout->addRow(title, h);
 }
 
+int ParametersPanel::calculatePhaseCount() const {
+    int phases = 2;
+    if (!m_cbLeftTurn->isChecked()) {
+        phases += 2;
+    }
+    if (!m_cbParallelPeds->isChecked()) {
+        phases += 1;
+    }
+    return phases;
+}
+
 QWidget* ParametersPanel::createApproachTab(ApproachUI& uiElements) {
     auto* w = new QWidget(this);
     auto* l = new QFormLayout(w);
@@ -43,18 +58,11 @@ QWidget* ParametersPanel::createApproachTab(ApproachUI& uiElements) {
     addSliderRow(l, "Зеленый Z (с):", 5, 180, 30, uiElements.slZ, uiElements.sbZ);
     addSliderRow(l, "Красный K (с):", 5, 180, 60, uiElements.slK, uiElements.sbK);
 
-    connect(uiElements.slP, &QSlider::valueChanged, this, [this]() {
-        queueConfigUpdate();
-    });
+    connect(uiElements.slP, &QSlider::valueChanged, this, &ParametersPanel::queueConfigUpdate);
 
-    // Движение ЗЕЛЕНОГО ползунка
     connect(uiElements.slZ, &QSlider::valueChanged, this, [this, uiElements](int val) {
-        int nPhases = 2;
-        if (!m_cbLeftTurn->isChecked()) nPhases += 2;
-        if (!m_cbParallelPeds->isChecked()) nPhases += 1;
-
-        int tPhase = m_slTotalT->value() / nPhases;
-        int newK = tPhase - val;
+        const int tPhase = m_slTotalT->value() / calculatePhaseCount();
+        const int newK = tPhase - val;
 
         const QSignalBlocker bK(uiElements.slK), bKsb(uiElements.sbK);
         uiElements.slK->setValue(newK);
@@ -63,14 +71,9 @@ QWidget* ParametersPanel::createApproachTab(ApproachUI& uiElements) {
         queueConfigUpdate();
     });
 
-    // Движение КРАСНОГО ползунка
     connect(uiElements.slK, &QSlider::valueChanged, this, [this, uiElements](int val) {
-        int nPhases = 2;
-        if (!m_cbLeftTurn->isChecked()) nPhases += 2;
-        if (!m_cbParallelPeds->isChecked()) nPhases += 1;
-
-        int tPhase = m_slTotalT->value() / nPhases;
-        int newZ = tPhase - val;
+        const int tPhase = m_slTotalT->value() / calculatePhaseCount();
+        const int newZ = tPhase - val;
 
         const QSignalBlocker bZ(uiElements.slZ), bZsb(uiElements.sbZ);
         uiElements.slZ->setValue(newZ);
@@ -94,7 +97,7 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
 
     auto* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(5, 5, 5, 5);
-    this->setObjectName("scrollBg");
+    setObjectName("scrollBg");
 
     auto* gbMode = new QGroupBox("Настройки перекрестка", this);
     auto* lMode = new QVBoxLayout(gbMode);
@@ -183,7 +186,6 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
     connect(m_cbParallelPeds, &QCheckBox::toggled, this, triggerGlobal);
     connect(m_cbTopology, &QComboBox::currentIndexChanged, this, triggerGlobal);
 
-    // Взаимная коррекция Vmin и Vmax
     connect(m_slMinSpeed, &QSlider::valueChanged, this, [this](int val) {
         if (val > m_slMaxSpeed->value()) {
             m_slMaxSpeed->setValue(val);
@@ -225,26 +227,20 @@ void ParametersPanel::onGlobalChanged() {
     m_slPedZ->setEnabled(isStatic && !m_cbParallelPeds->isChecked());
     m_sbPedZ->setEnabled(isStatic && !m_cbParallelPeds->isChecked());
 
-    for (int i = 0; i < 4; ++i) {
-        m_approaches[i].slZ->setEnabled(isStatic);
-        m_approaches[i].sbZ->setEnabled(isStatic);
-        m_approaches[i].slK->setEnabled(isStatic);
-        m_approaches[i].sbK->setEnabled(isStatic);
+    for (auto& app : m_approaches) {
+        app.slZ->setEnabled(isStatic);
+        app.sbZ->setEnabled(isStatic);
+        app.slK->setEnabled(isStatic);
+        app.sbK->setEnabled(isStatic);
     }
     onTabSlidersChanged();
 }
 
 void ParametersPanel::onTabSlidersChanged() {
-    int nPhases = 2;
-    if (!m_cbLeftTurn->isChecked()) nPhases += 2;
-    if (!m_cbParallelPeds->isChecked()) nPhases += 1;
+    const int tPhase = m_slTotalT->value() / calculatePhaseCount();
+    const int maxVal = std::max(5, tPhase - 5);
 
-    int tPhase = m_slTotalT->value() / nPhases;
-    int maxVal = std::max(5, tPhase - 5);
-
-    for (int i = 0; i < 4; ++i) {
-        auto& app = m_approaches[i];
-
+    for (auto& app : m_approaches) {
         const QSignalBlocker bZ(app.slZ), bZsb(app.sbZ);
         const QSignalBlocker bK(app.slK), bKsb(app.sbK);
 
@@ -253,8 +249,8 @@ void ParametersPanel::onTabSlidersChanged() {
         app.slK->setRange(5, maxVal);
         app.sbK->setRange(5, maxVal);
 
-        int currentZ = app.slZ->value();
-        int currentK = tPhase - currentZ;
+        const int currentZ = app.slZ->value();
+        const int currentK = tPhase - currentZ;
 
         app.slK->setValue(currentK);
         app.sbK->setValue(currentK);
@@ -277,7 +273,7 @@ void ParametersPanel::emitConfig() {
     config.minSpeedKmh = m_slMinSpeed->value();
     config.maxSpeedKmh = m_slMaxSpeed->value();
 
-    std::array<ApproachParams*, 4> targets = {&config.north, &config.south, &config.east, &config.west};
+    const std::array<ApproachParams*, 4> targets = {&config.north, &config.south, &config.east, &config.west};
     for (size_t i = 0; i < targets.size(); ++i) {
         targets[i]->flowP = m_approaches[i].slP->value();
         targets[i]->greenZ = m_approaches[i].slZ->value();

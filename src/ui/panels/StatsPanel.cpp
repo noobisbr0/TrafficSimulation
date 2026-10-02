@@ -44,15 +44,17 @@ void QueueGraphWidget::paintEvent(QPaintEvent*) {
 
     p.setPen(QPen(QColor(255, 255, 255, 25), 1));
     for (int i = 1; i < 4; ++i) {
-        int yLine = height() * i / 4;
+        const int yLine = height() * i / 4;
         p.drawLine(0, yLine, width(), yLine);
     }
     for (int i = 1; i < 6; ++i) {
-        int xLine = width() * i / 6;
+        const int xLine = width() * i / 6;
         p.drawLine(xLine, 0, xLine, height());
     }
 
-    if (m_history.size() < 2) return;
+    if (m_history.size() < 2) {
+        return;
+    }
 
     const double minT = m_history.front().first;
     const double maxT = m_history.back().first;
@@ -95,15 +97,16 @@ void QueueGraphWidget::paintEvent(QPaintEvent*) {
 StatsPanel::StatsPanel(QWidget* parent) : QWidget(parent) {
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
+
     auto* gb = new QGroupBox("Статистика (В реальном времени)", this);
     auto* l = new QVBoxLayout(gb);
 
     auto* grid = new QGridLayout();
     grid->setSpacing(5);
 
-    auto setupLabel = [](const QString& text, QColor color, int fontSize, bool bold) {
+    auto setupLabel = [](const QString& text, const QColor& color, int fontSize, bool bold) {
         auto* lbl = new QLabel(text);
-        QString weight = bold ? "bold" : "normal";
+        const QString weight = bold ? "bold" : "normal";
         lbl->setStyleSheet(QString("color: %1; font-size: %2px; font-weight: %3;").arg(color.name()).arg(fontSize).arg(weight));
         return lbl;
     };
@@ -143,16 +146,17 @@ void StatsPanel::resetStats() {
     m_lblWaitTime->setText("0.0 с");
     m_lblQueue->setText("0");
     m_lblPassed->setText("0");
-    if (m_graph) m_graph->clear();
+    if (m_graph) {
+        m_graph->clear();
+    }
     m_records.clear();
 }
 
 void StatsPanel::updateStats(const SimulationSnapshot& snap) {
-    if (snap.stats.currentSimTimeSec == 0.0) {
-        if (m_graph) m_graph->clear();
-        m_records.clear();
-    } else if (!m_records.empty() && snap.stats.currentSimTimeSec < m_records.back().timeSec) {
-        if (m_graph) m_graph->clear();
+    if (snap.stats.currentSimTimeSec == 0.0 || (!m_records.empty() && snap.stats.currentSimTimeSec < m_records.back().timeSec)) {
+        if (m_graph) {
+            m_graph->clear();
+        }
         m_records.clear();
     }
 
@@ -180,10 +184,9 @@ void StatsPanel::exportToCsv() {
         return;
     }
 
-    // Автоматическое формирование пути сохранения (папка "Документы" пользователя)
     QString exportDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     if (exportDir.isEmpty()) {
-        exportDir = QDir::currentPath(); // Запасной вариант - текущая папка
+        exportDir = QDir::currentPath();
     }
 
     QDir dir(exportDir);
@@ -214,7 +217,6 @@ void StatsPanel::exportToCsv() {
 
     file.close();
 
-    // Быстрый системный MessageBox вместо медленного QFileDialog
     QMessageBox::information(
         this,
         "Успешный экспорт",

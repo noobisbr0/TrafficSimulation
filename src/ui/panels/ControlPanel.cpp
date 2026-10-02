@@ -1,11 +1,14 @@
 #include "ControlPanel.h"
 #include "presenter/SimulationPresenter.h"
 #include <QHBoxLayout>
+#include <QPushButton>
+#include <QDoubleSpinBox>
 #include <QIcon>
 
 ControlPanel::ControlPanel(SimulationPresenter* presenter, QWidget* parent) : QWidget(parent) {
     auto* layout = new QHBoxLayout(this);
     layout->setSpacing(0);
+    layout->setContentsMargins(0, 0, 0, 0);
 
     m_btnStart = new QPushButton(this);
     m_btnStart->setIcon(QIcon(":/icons/play.svg"));
@@ -33,7 +36,6 @@ ControlPanel::ControlPanel(SimulationPresenter* presenter, QWidget* parent) : QW
     m_sbSpeed->setValue(1.0);
     m_sbSpeed->setSuffix("x");
 
-    layout->setContentsMargins(0, 0, 0, 0);
     layout->addStretch();
     layout->addWidget(m_btnStart);
     layout->addWidget(m_btnPause);
@@ -50,6 +52,5 @@ ControlPanel::ControlPanel(SimulationPresenter* presenter, QWidget* parent) : QW
     connect(m_btnPause, &QPushButton::clicked, presenter, &SimulationPresenter::onPauseClicked);
     connect(m_btnStep,  &QPushButton::clicked, presenter, &SimulationPresenter::onStepClicked);
     connect(m_btnReset, &QPushButton::clicked, presenter, &SimulationPresenter::onResetClicked);
-
     connect(m_sbSpeed, &QDoubleSpinBox::valueChanged, presenter, &SimulationPresenter::onSimulationSpeedMultiplierChanged);
 }

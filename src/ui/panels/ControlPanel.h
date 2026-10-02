@@ -1,9 +1,9 @@
 #pragma once
 
 #include <QWidget>
-#include <QPushButton>
-#include <QDoubleSpinBox>
 
+class QPushButton;
+class QDoubleSpinBox;
 class SimulationPresenter;
 
 class ControlPanel : public QWidget {
