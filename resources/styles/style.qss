@@ -64,7 +64,6 @@ QDockWidget::title {
 }
 
 /* 4. Карточный дизайн */
-
 QGroupBox {
     border: none;
     border-radius: 10px;
@@ -81,7 +80,6 @@ QGroupBox::title {
     font-weight: bold;
     background: transparent;
 }
-
 
 /* Подзаголовки направлений светофоров */
 QLabel#approachTitle {
@@ -104,9 +102,9 @@ QComboBox {
     combobox-popup: 0;
 }
 
-QSpinBox::up-button, QSpinBox::down-button,
+QSpinBox::up-button, QSpinBox::down-button, 
 QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {
-    width: 0px;
+    width: 0px; 
 }
 
 QComboBox::drop-down {
@@ -146,9 +144,7 @@ QTabBar::tab:selected {
     color: white;
 }
 
-
 /* 7. Ползунки (Слайдеры) */
-
 QSlider::groove:horizontal {
     height: 6px;
     background: #3A3F55;
@@ -162,7 +158,6 @@ QSlider::handle:horizontal {
     margin: -4px 0;
     border-radius: 7px;
 }
-
 
 /* 8. Скроллбары */
 QScrollBar:vertical {
@@ -187,7 +182,6 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
 }
 
 /* 9. Кнопки плеера */
-
 QPushButton {
     background-color: #3D5AFE;
     color: white;
@@ -213,5 +207,4 @@ QPushButton#btnGroupMiddle {
 QPushButton#btnGroupRight {
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
-
 }
