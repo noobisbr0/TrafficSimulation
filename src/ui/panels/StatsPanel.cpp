@@ -3,9 +3,16 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QLabel>
+#include <QPushButton>
 #include <QPainter>
 #include <QPainterPath>
 #include <QLinearGradient>
+#include <QStandardPaths>
+#include <QDir>
+#include <QFile>
+#include <QTextStream>
+#include <QMessageBox>
+#include <QDateTime>
 #include <algorithm>
 
 QueueGraphWidget::QueueGraphWidget(QWidget* parent) : QWidget(parent) {
@@ -59,7 +66,6 @@ void QueueGraphWidget::paintEvent(QPaintEvent*) {
 
     QPainterPath path;
     QPainterPath fillPath;
-
     fillPath.moveTo(0, height());
 
     for (size_t i = 0; i < m_history.size(); ++i) {
@@ -121,6 +127,13 @@ StatsPanel::StatsPanel(QWidget* parent) : QWidget(parent) {
     l->addSpacing(10);
     l->addWidget(new QLabel("Динамика очередей (последние 60с):", this));
     l->addWidget(m_graph);
+    l->addSpacing(10);
+
+    m_btnExport = new QPushButton("Экспорт в CSV", this);
+    m_btnExport->setObjectName("btnExportCsv");
+    m_btnExport->setCursor(Qt::PointingHandCursor);
+    connect(m_btnExport, &QPushButton::clicked, this, &StatsPanel::exportToCsv);
+    l->addWidget(m_btnExport);
 
     layout->addWidget(gb);
     layout->addStretch();
@@ -131,10 +144,17 @@ void StatsPanel::resetStats() {
     m_lblQueue->setText("0");
     m_lblPassed->setText("0");
     if (m_graph) m_graph->clear();
+    m_records.clear();
 }
 
 void StatsPanel::updateStats(const SimulationSnapshot& snap) {
-    if (snap.stats.currentSimTimeSec == 0.0 && m_graph) m_graph->clear();
+    if (snap.stats.currentSimTimeSec == 0.0) {
+        if (m_graph) m_graph->clear();
+        m_records.clear();
+    } else if (!m_records.empty() && snap.stats.currentSimTimeSec < m_records.back().timeSec) {
+        if (m_graph) m_graph->clear();
+        m_records.clear();
+    }
 
     m_lblWaitTime->setText(QString("%1 с").arg(snap.stats.averageWaitTimeSec, 0, 'f', 1));
     m_lblQueue->setText(QString::number(snap.stats.currentCarsInQueue));
@@ -143,4 +163,63 @@ void StatsPanel::updateStats(const SimulationSnapshot& snap) {
     if (m_graph) {
         m_graph->addData(snap.stats.currentSimTimeSec, snap.stats.currentCarsInQueue);
     }
+
+    if (m_records.empty() || (snap.stats.currentSimTimeSec - m_records.back().timeSec >= 0.1)) {
+        m_records.push_back({
+            snap.stats.currentSimTimeSec,
+            snap.stats.currentCarsInQueue,
+            snap.stats.averageWaitTimeSec,
+            snap.stats.totalCarsPassed
+        });
+    }
+}
+
+void StatsPanel::exportToCsv() {
+    if (m_records.empty()) {
+        QMessageBox::information(this, "Экспорт данных", "Нет накопленных данных симуляции для экспорта.\nЗапустите модель перед экспортом.");
+        return;
+    }
+
+    // Автоматическое формирование пути сохранения (папка "Документы" пользователя)
+    QString exportDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    if (exportDir.isEmpty()) {
+        exportDir = QDir::currentPath(); // Запасной вариант - текущая папка
+    }
+
+    QDir dir(exportDir);
+    if (!dir.exists()) {
+        dir.mkpath(".");
+    }
+
+    const QString fileName = QString("simulation_data_%1.csv").arg(QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss"));
+    const QString filePath = dir.absoluteFilePath(fileName);
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, "Ошибка экспорта", QString("Не удалось создать файл:\n%1").arg(file.errorString()));
+        return;
+    }
+
+    QTextStream out(&file);
+    out.setRealNumberNotation(QTextStream::FixedNotation);
+    out.setRealNumberPrecision(2);
+    out << "SimTimeSec,CarsInQueue,AverageWaitTimeSec,TotalCarsPassed\n";
+
+    for (const auto& rec : m_records) {
+        out << rec.timeSec << ','
+            << rec.carsInQueue << ','
+            << rec.averageWaitTimeSec << ','
+            << rec.totalCarsPassed << '\n';
+    }
+
+    file.close();
+
+    // Быстрый системный MessageBox вместо медленного QFileDialog
+    QMessageBox::information(
+        this,
+        "Успешный экспорт",
+        QString("Данные симуляции сохранены моментально.\n\nПуть к файлу:\n%1\n\nВсего записей: %2")
+            .arg(filePath)
+            .arg(m_records.size())
+        );
 }
