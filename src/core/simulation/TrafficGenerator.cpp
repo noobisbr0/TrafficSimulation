@@ -104,7 +104,7 @@ void TrafficGenerator::update(double dt) {
 
   DirectionId direction = chooseDirection();
 
-  const std::vector<Lane*>& lanes = m_intersection->getLanes(direction);
+  std::vector<Lane*> lanes = m_intersection->getLanes(direction);
   if (lanes.empty()) {
     return;
   }
@@ -122,6 +122,20 @@ void TrafficGenerator::update(double dt) {
     speed,
     turnDirection
   );
+
+  double angleDeg = 0.0;
+
+  if (direction == DirectionId::North) {
+    angleDeg = -90.0;
+  } else if (direction == DirectionId::South) {
+    angleDeg = 90.0;
+  } else if (direction == DirectionId::East) {
+    angleDeg = 180.0;
+  } else {
+    angleDeg = 0.0;
+  }
+
+  vehicle.setAngleDeg(angleDeg);
 
   m_nextVehicleId++;
 

@@ -13,16 +13,17 @@ public:
 
   Vector2D getCenter() const;
 
-  void addLane(DirectionId direction, Lane* lane);
-  void addTrafficLight(TrafficLight* trafficLight);
+  void addLane(DirectionId direction, const Lane& lane);
+  void addTrafficLight(const TrafficLight& trafficLight);
 
-  const std::vector<Lane*>& getLanes() const;
-  const std::vector<Lane*>& getLanes(DirectionId direction) const;
-  const std::vector<TrafficLight*>& getTrafficLights() const;
+  const std::vector<Lane>& getLanes() const;
+  std::vector<Lane*> getLanes(DirectionId direction) const;
+  std::vector<TrafficLight>& getTrafficLights();
+  const std::vector<TrafficLight>& getTrafficLights() const;
 
 private:
   Vector2D m_center;
-  std::vector<Lane*> m_lanes;
-  std::map<DirectionId, std::vector<Lane*>> m_lanesByDirection;
-  std::vector<TrafficLight*> m_trafficLights;
+  std::vector<Lane> m_lanes;
+  std::map<DirectionId, std::vector<size_t>> m_lanesByDirection;
+  std::vector<TrafficLight> m_trafficLights;
 };

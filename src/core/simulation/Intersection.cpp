@@ -8,39 +8,41 @@ Vector2D Intersection::getCenter() const {
     return m_center;
 }
 
-void Intersection::addLane(DirectionId direction, Lane* lane) {
-    if (lane == nullptr) {
-        return;
-    }
-
+void Intersection::addLane(DirectionId direction, const Lane& lane) {
     m_lanes.push_back(lane);
-    m_lanesByDirection[direction].push_back(lane);
+
+    size_t index = m_lanes.size() - 1;
+    m_lanesByDirection[direction].push_back(index);
 }
 
-void Intersection::addTrafficLight(TrafficLight* trafficLight) {
-    if (trafficLight == nullptr) {
-        return;
-    }
-
+void Intersection::addTrafficLight(const TrafficLight& trafficLight) {
     m_trafficLights.push_back(trafficLight);
 }
 
-const std::vector<Lane*>& Intersection::getLanes() const {
+const std::vector<Lane>& Intersection::getLanes() const {
     return m_lanes;
 }
 
-const std::vector<Lane*>& Intersection::getLanes(DirectionId direction) const {
-    static const std::vector<Lane*> emptyLanes;
+std::vector<Lane*> Intersection::getLanes(DirectionId direction) const {
+    std::vector<Lane*> lanes;
 
     auto it = m_lanesByDirection.find(direction);
 
     if (it == m_lanesByDirection.end()) {
-        return emptyLanes;
+        return lanes;
     }
 
-    return it->second;
+    for (size_t index : it->second) {
+        lanes.push_back(const_cast<Lane*>(&m_lanes[index]));
+    }
+
+    return lanes;
 }
 
-const std::vector<TrafficLight*>& Intersection::getTrafficLights() const {
+std::vector<TrafficLight>& Intersection::getTrafficLights() {
+    return m_trafficLights;
+}
+
+const std::vector<TrafficLight>& Intersection::getTrafficLights() const {
     return m_trafficLights;
 }
