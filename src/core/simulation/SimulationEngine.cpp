@@ -1,4 +1,5 @@
 #include "SimulationEngine.h"
+#include "MovementLogic.h"
 #include <cmath>
 
 SimulationEngine::SimulationEngine()
@@ -194,10 +195,7 @@ void SimulationEngine::updateVehicles(double dt) {
     vehicle.setBraking(false);
     vehicle.setWaitingInQueue(false);
 
-    position.x += std::cos(angleRadians) * speedMetersPerSecond * dt;
-
-    position.y += std::sin(angleRadians) * speedMetersPerSecond * dt;
-
+    MovementLogic::moveVehicle(vehicle, dt);
     vehicle.setPosition(position);
   }
 }
