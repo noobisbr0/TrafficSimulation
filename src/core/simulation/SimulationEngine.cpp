@@ -130,7 +130,11 @@ void SimulationEngine::updateVehicles(double dt) {
         direction = DirectionId::West;
     }
 
-    double stopLine = 13.25;
+    double halfRoadWidth = 7.0;
+    if (m_config.topology == IntersectionTopology::Lanes_3x3) {
+      halfRoadWidth = 10.5;
+    }
+    double stopLine = halfRoadWidth + 4.0 + 2.25;
 
     bool isRed = false;
 
