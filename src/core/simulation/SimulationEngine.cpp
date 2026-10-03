@@ -113,12 +113,6 @@ void SimulationEngine::updateVehicles(double dt) {
   }
 
   for (Vehicle& vehicle : m_vehicles) {
-    double speedMetersPerSecond = vehicle.getSpeed() / 3.6;
-
-    double angleRadians = vehicle.getAngleDeg() * std::acos(-1.0) / 180.0;
-
-    Vector2D position = vehicle.getPosition();
-
     DirectionId direction;
 
     if (vehicle.getAngleDeg() == -90.0) {
@@ -142,53 +136,25 @@ void SimulationEngine::updateVehicles(double dt) {
 
     for (const TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
       if (trafficLight.getDirection() == direction) {
-          isRed = (trafficLight.getColor() == LightColor::Red);
-          break;
+        isRed = (trafficLight.getColor() == LightColor::Red);
+        break;
       }
     }
 
     bool shouldStop = false;
 
-    if (isRed) {
-      if (direction == DirectionId::North && position.y >= stopLine) {
-          shouldStop = true;
-      } else if (direction == DirectionId::South && position.y <= -stopLine) {
-          shouldStop = true;
-      } else if (direction == DirectionId::East && position.x >= stopLine) {
-          shouldStop = true;
-      } else if (direction == DirectionId::West && position.x <= -stopLine) {
-          shouldStop = true;
+    for (const TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
+      if (trafficLight.getDirection() == direction) {
+        shouldStop = MovementLogic::shouldStopAtRedLight(
+          vehicle,
+          trafficLight,
+          stopLine);
+        break;
       }
     }
 
     if (shouldStop) {
-      double nextX = position.x + std::cos(angleRadians) * speedMetersPerSecond * dt;
-
-      double nextY = position.y + std::sin(angleRadians) * speedMetersPerSecond * dt;
-
-      if (direction == DirectionId::North && nextY < stopLine) {
-        nextY = stopLine;
-      }
-
-      if (direction == DirectionId::South && nextY > -stopLine) {
-        nextY = -stopLine;
-      }
-
-      if (direction == DirectionId::East && nextX < stopLine) {
-        nextX = stopLine;
-      }
-
-      if (direction == DirectionId::West && nextX > -stopLine) {
-        nextX = -stopLine;
-      }
-
-      position.x = nextX;
-      position.y = nextY;
-
-      vehicle.setPosition(position);
-      vehicle.setBraking(true);
-      vehicle.setWaitingInQueue(true);
-
+      MovementLogic::stopVehicleAtRedLight(vehicle, dt, direction, stopLine);
       continue;
     }
 
@@ -196,7 +162,6 @@ void SimulationEngine::updateVehicles(double dt) {
     vehicle.setWaitingInQueue(false);
 
     MovementLogic::moveVehicle(vehicle, dt);
-    vehicle.setPosition(position);
   }
 }
 
