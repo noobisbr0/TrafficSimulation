@@ -130,6 +130,8 @@ void SimulationEngine::updateVehicles(double dt) {
         direction = DirectionId::West;
     }
 
+    double stopLine = 13.25;
+
     bool isRed = false;
 
     for (const TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
@@ -142,38 +144,36 @@ void SimulationEngine::updateVehicles(double dt) {
     bool shouldStop = false;
 
     if (isRed) {
-        if (direction == DirectionId::North && position.y >= 20.0) {
-            shouldStop = true;
-        } else if (direction == DirectionId::South && position.y <= -20.0) {
-            shouldStop = true;
-        } else if (direction == DirectionId::East && position.x >= 20.0) {
-            shouldStop = true;
-        } else if (direction == DirectionId::West && position.x <= -20.0) {
-            shouldStop = true;
-        }
+      if (direction == DirectionId::North && position.y >= stopLine) {
+          shouldStop = true;
+      } else if (direction == DirectionId::South && position.y <= -stopLine) {
+          shouldStop = true;
+      } else if (direction == DirectionId::East && position.x >= stopLine) {
+          shouldStop = true;
+      } else if (direction == DirectionId::West && position.x <= -stopLine) {
+          shouldStop = true;
+      }
     }
 
     if (shouldStop) {
-      double nextX = position.x +
-          std::cos(angleRadians) * speedMetersPerSecond * dt;
+      double nextX = position.x + std::cos(angleRadians) * speedMetersPerSecond * dt;
 
-      double nextY = position.y +
-          std::sin(angleRadians) * speedMetersPerSecond * dt;
+      double nextY = position.y + std::sin(angleRadians) * speedMetersPerSecond * dt;
 
-      if (direction == DirectionId::North && nextY < 20.0) {
-          nextY = 20.0;
+      if (direction == DirectionId::North && nextY < stopLine) {
+        nextY = stopLine;
       }
 
-      if (direction == DirectionId::South && nextY > -20.0) {
-          nextY = -20.0;
+      if (direction == DirectionId::South && nextY > -stopLine) {
+        nextY = -stopLine;
       }
 
-      if (direction == DirectionId::East && nextX < 20.0) {
-          nextX = 20.0;
+      if (direction == DirectionId::East && nextX < stopLine) {
+        nextX = stopLine;
       }
 
-      if (direction == DirectionId::West && nextX > -20.0) {
-          nextX = -20.0;
+      if (direction == DirectionId::West && nextX > -stopLine) {
+        nextX = -stopLine;
       }
 
       position.x = nextX;
