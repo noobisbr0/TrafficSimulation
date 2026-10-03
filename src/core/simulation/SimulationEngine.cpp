@@ -131,6 +131,7 @@ void SimulationEngine::updateVehicles(double dt) {
     }
 
     double halfRoadWidth = 7.0;
+
     if (m_config.topology == IntersectionTopology::Lanes_3x3) {
       halfRoadWidth = 10.5;
     }
@@ -201,6 +202,21 @@ void SimulationEngine::updateVehicles(double dt) {
   }
 }
 
+void SimulationEngine::removeVehiclesOutsideScene() {
+  const double limit = 110.0;
+
+  for (auto it = m_vehicles.begin(); it != m_vehicles.end(); ) {
+    const Vector2D position = it->getPosition();
+
+    if (position.x < -limit || position.x > limit ||
+        position.y < -limit || position.y > limit) {
+      it = m_vehicles.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
+
 void SimulationEngine::start() {
   m_isRunning = true;
 }
@@ -233,7 +249,9 @@ void SimulationEngine::step(double dt) {
   }
 
   updateVehicles(dt);
+  removeVehiclesOutsideScene();
 }
+
 
 void SimulationEngine::updateConfig(const SimulationConfig& config) {
   m_config = config;

@@ -25,6 +25,7 @@ private:
   void initializeIntersection();
   void updateTrafficLights(double dt);
   void updateVehicles(double dt);
+  void removeVehiclesOutsideScene();
 
   bool m_isRunning;
   double m_currentTime;
