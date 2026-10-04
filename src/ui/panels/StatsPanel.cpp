@@ -220,7 +220,7 @@ void StatsPanel::exportToCsv() {
     QMessageBox::information(
         this,
         "Успешный экспорт",
-        QString("Данные симуляции сохранены моментально.\n\nПуть к файлу:\n%1\n\nВсего записей: %2")
+        QString("Данные симуляции сохранены.\n\nПуть к файлу:\n%1\n\nВсего записей: %2")
             .arg(filePath)
             .arg(m_records.size())
         );

@@ -54,9 +54,9 @@ QWidget* ParametersPanel::createApproachTab(ApproachUI& uiElements) {
     l->setVerticalSpacing(2);
     l->setHorizontalSpacing(6);
 
-    addSliderRow(l, "Поток P (авт/ч):", 100, 2000, 600, uiElements.slP, uiElements.sbP);
-    addSliderRow(l, "Зеленый Z (с):", 5, 180, 30, uiElements.slZ, uiElements.sbZ);
-    addSliderRow(l, "Красный K (с):", 5, 180, 60, uiElements.slK, uiElements.sbK);
+    addSliderRow(l, "Поток (авт/ч):", 100, 2000, 600, uiElements.slP, uiElements.sbP);
+    addSliderRow(l, "Зеленый (с):", 5, 180, 30, uiElements.slZ, uiElements.sbZ);
+    addSliderRow(l, "Красный (с):", 5, 180, 60, uiElements.slK, uiElements.sbK);
 
     connect(uiElements.slP, &QSlider::valueChanged, this, &ParametersPanel::queueConfigUpdate);
 
@@ -128,7 +128,7 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
     topRow->addSpacing(10);
     lMode->addLayout(topRow);
 
-    m_cbLeftTurn = new QCheckBox("ВСТР (Просачивание налево)", this);
+    m_cbLeftTurn = new QCheckBox("Просачивание налево", this);
     m_cbParallelPeds = new QCheckBox("Пешеходы в фазе с авто", this);
     m_cbLeftTurn->setChecked(true);
     m_cbParallelPeds->setChecked(false);
@@ -162,12 +162,12 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
 
     m_globalWidget = new QGroupBox("Глобальные параметры");
     auto* lGlobal = new QFormLayout(m_globalWidget);
-    addSliderRow(lGlobal, "Общий цикл T (с):", 30, 180, 90, m_slTotalT, m_sbTotalT);
-    addSliderRow(lGlobal, "Видимость D (м):", 20, 150, 60, m_slDistD, m_sbDistD);
-    addSliderRow(lGlobal, "Пешех. З_п (с):", 5, 60, 15, m_slPedZ, m_sbPedZ);
-    addSliderRow(lGlobal, "Поток пеш-в П:", 50, 1000, 300, m_slPedFlow, m_sbPedFlow);
-    addSliderRow(lGlobal, "V мин (км/ч):", 20, 140, 30, m_slMinSpeed, m_sbMinSpeed);
-    addSliderRow(lGlobal, "V макс (км/ч):", 20, 140, 80, m_slMaxSpeed, m_sbMaxSpeed);
+    addSliderRow(lGlobal, "Общий цикл (с):", 30, 180, 90, m_slTotalT, m_sbTotalT);
+    addSliderRow(lGlobal, "Видимость (м):", 20, 150, 60, m_slDistD, m_sbDistD);
+    addSliderRow(lGlobal, "З-ый пеш-в (с):", 5, 60, 15, m_slPedZ, m_sbPedZ);
+    addSliderRow(lGlobal, "Поток пеш-в:", 50, 1000, 300, m_slPedFlow, m_sbPedFlow);
+    addSliderRow(lGlobal, "Ск-ть min (км/ч):", 20, 140, 30, m_slMinSpeed, m_sbMinSpeed);
+    addSliderRow(lGlobal, "Ск-ть max (км/ч):", 20, 140, 80, m_slMaxSpeed, m_sbMaxSpeed);
 
     mainLayout->addStretch();
 

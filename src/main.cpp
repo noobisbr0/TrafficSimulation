@@ -4,15 +4,12 @@
 #include <QTextStream>
 
 int main(int argc, char* argv[]) {
-    // 1. Отключаем D-Bus опрос демона GVFS в GLib/GIO (главная причина 10с таймаута файловых окон)
     qputenv("GIO_USE_VFS", "local");
 
-    // 2. Отключаем шину доступности AT-SPI, которая блокирует вызов любых QDialog/QMessageBox
     qputenv("NO_AT_BRIDGE", "1");
     qputenv("QT_ACCESSIBILITY", "0");
     qputenv("QT_LINUX_ACCESSIBILITY_ALWAYS_ON", "0");
 
-    // 3. Отключаем синхронные запросы Wayland к XDG Desktop Portal
     qputenv("QT_USE_PORTAL", "0");
     qputenv("QT_NO_XDG_DESKTOP_PORTAL", "1");
     qputenv("QT_QPA_PLATFORMTHEME", "generic");

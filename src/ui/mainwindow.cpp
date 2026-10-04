@@ -13,7 +13,7 @@
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent) {
-    setWindowTitle("Симулятор перекрестка (Frontend UI)");
+    setWindowTitle("Симулятор перекрестка");
     resize(1280, 720);
 
     auto engine = std::make_shared<MockSimulationEngine>();
