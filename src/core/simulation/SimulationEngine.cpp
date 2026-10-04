@@ -7,8 +7,10 @@ SimulationEngine::SimulationEngine()
   m_currentTime(0.0),
   m_trafficLightPhaseTime(0.0),
   m_intersection(Vector2D(0.0, 0.0)),
-  m_trafficGenerator(&m_intersection) {
+  m_trafficGenerator(&m_intersection),
+  m_staticController() {
   m_trafficGenerator.setConfig(m_config);
+  m_staticController.setConfig(m_config);
   initializeIntersection();
 }
 
@@ -101,73 +103,14 @@ void SimulationEngine::initializeIntersection() {
 }
 
 void SimulationEngine::updateTrafficLights(double dt) {
-  if (dt <= 0.0) {
-    return;
-  }
-
-  m_trafficLightPhaseTime += dt;
-  const double verticalGreenTime = static_cast<double>(m_config.north.greenZ);
-  const double horizontalGreenTime = static_cast<double>(m_config.east.greenZ);
-  const double yellowTime = 3.0;
-
-  if (m_trafficLightPhaseTime < verticalGreenTime) {
-    for (TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
-      if (trafficLight.getDirection() == DirectionId::North ||
-          trafficLight.getDirection() == DirectionId::South) {
-        trafficLight.setColor(LightColor::Green);
-      } else {
-        trafficLight.setColor(LightColor::Red);
-      }
-    }
-
-  } else if (m_trafficLightPhaseTime < verticalGreenTime + yellowTime) {
-    for (TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
-      if (trafficLight.getDirection() == DirectionId::North ||
-          trafficLight.getDirection() == DirectionId::South) {
-        trafficLight.setColor(LightColor::Yellow);
-      } else {
-        trafficLight.setColor(LightColor::Red);
-      }
-    }
-
-  } else if (m_trafficLightPhaseTime < verticalGreenTime + yellowTime + horizontalGreenTime) {
-    for (TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
-      if (trafficLight.getDirection() == DirectionId::North ||
-          trafficLight.getDirection() == DirectionId::South) {
-        trafficLight.setColor(LightColor::Red);
-      } else {
-        trafficLight.setColor(LightColor::Green);
-      }
-    }
-
-  } else if (m_trafficLightPhaseTime < verticalGreenTime + yellowTime + horizontalGreenTime + yellowTime) {
-
-    for (TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
-      if (trafficLight.getDirection() == DirectionId::North ||
-          trafficLight.getDirection() == DirectionId::South) {
-        trafficLight.setColor(LightColor::Red);
-      } else {
-        trafficLight.setColor(LightColor::Yellow);
-      }
-    }
-
-  } else {
-    m_trafficLightPhaseTime = 0.0;
-
-    for (TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
-      if (trafficLight.getDirection() == DirectionId::North ||
-          trafficLight.getDirection() == DirectionId::South) {
-        trafficLight.setColor(LightColor::Green);
-      } else {
-        trafficLight.setColor(LightColor::Red);
-      }
-    }
+  if (m_config.mode == ControllerMode::Static) {
+    m_staticController.update(dt, m_intersection.getTrafficLights());
   }
 }
 
 void SimulationEngine::updateVehicles(double dt) {
   if (dt <= 0.0) {
-      return;
+    return;
   }
 
   for (Vehicle& vehicle : m_vehicles) {
@@ -320,6 +263,7 @@ void SimulationEngine::reset() {
   m_isRunning = false;
   m_currentTime = 0.0;
   m_trafficLightPhaseTime = 0.0;
+  m_staticController.reset();
 }
 
 void SimulationEngine::step(double dt) {
@@ -340,6 +284,9 @@ void SimulationEngine::step(double dt) {
 
     for (const Vehicle& existingVehicle : m_vehicles) {
       if (vehicle.getApproachDirection() != existingVehicle.getApproachDirection()) {
+        continue;
+      }
+      if (vehicle.getLaneId() != existingVehicle.getLaneId()) {
         continue;
       }
         Vector2D difference = vehicle.getPosition() - existingVehicle.getPosition();
@@ -363,6 +310,7 @@ void SimulationEngine::updateConfig(const SimulationConfig& config) {
 
   m_config = config;
   m_trafficGenerator.setConfig(m_config);
+  m_staticController.setConfig(m_config);
 
   if (topologyChanged) {
     m_vehicles.clear();

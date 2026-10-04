@@ -8,6 +8,7 @@
 #include "../entities/Vehicle.h"
 #include "../entities/Lane.h"
 #include "../entities/TrafficLight.h"
+#include "../traffic_control/StaticController.h"
 
 class SimulationEngine : public ISimulationEngine {
 public:
@@ -34,6 +35,7 @@ private:
 
   Intersection m_intersection;
   TrafficGenerator m_trafficGenerator;
+  StaticController m_staticController;
   std::vector<Vehicle> m_vehicles;
   std::vector<Lane> m_lanes;
   std::vector<TrafficLight> m_trafficLights;

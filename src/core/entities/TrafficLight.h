@@ -12,8 +12,10 @@ public:
     LightColor getColor() const;
     bool hasLeftArrow() const;
     bool isLeftArrowGreen() const;
+    void setLeftArrowGreen(bool green);
     bool hasRightArrow() const;
     bool isRightArrowGreen() const;
+    void setRightArrowGreen(bool green);
 
     void setColor(LightColor color);
     void setLeftArrow(bool hasArrow, bool isGreen);
