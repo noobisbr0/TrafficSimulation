@@ -108,9 +108,30 @@ void TrafficGenerator::update(double dt) {
   if (lanes.empty()) {
     return;
   }
-  std::uniform_int_distribution<int> laneDistribution(0, static_cast<int>(lanes.size()) - 1);
+  int laneIndex = 0;
 
-  int laneIndex = laneDistribution(m_random);
+  int laneCount = static_cast<int>(lanes.size());
+
+  if (laneCount == 1) {
+    laneIndex = 0;
+  } else if (laneCount == 2) {
+    if (turnDirection == TurnDirection::Left) {
+      laneIndex = 0;
+    } else if (turnDirection == TurnDirection::Right) {
+      laneIndex = 1;
+    } else {
+      std::uniform_int_distribution<int> straightLaneDistribution(0, 1);
+      laneIndex = straightLaneDistribution(m_random);
+    }
+  } else {
+    if (turnDirection == TurnDirection::Left) {
+      laneIndex = 0;
+    } else if (turnDirection == TurnDirection::Straight) {
+      laneIndex = 1;
+    } else {
+      laneIndex = 2;
+    }
+  }
 
   Lane* lane = lanes[laneIndex];
 
@@ -122,6 +143,7 @@ void TrafficGenerator::update(double dt) {
     speed,
     turnDirection
   );
+  vehicle.setDesiredSpeed(speed);
 
   double angleDeg = 0.0;
 
@@ -136,11 +158,10 @@ void TrafficGenerator::update(double dt) {
   }
 
   vehicle.setAngleDeg(angleDeg);
-
+  vehicle.setApproachDirection(direction);
+  vehicle.setLaneId(lane->getId());
   m_nextVehicleId++;
-
   m_generatedVehicles.push_back(vehicle);
-
   m_timeUntilNextVehicle = generateNextSpawnInterval();
 }
 

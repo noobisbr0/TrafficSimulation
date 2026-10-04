@@ -13,38 +13,75 @@ SimulationEngine::SimulationEngine()
 }
 
 void SimulationEngine::initializeIntersection() {
-  Lane northLane(
-      1,
-      Vector2D(0.0, 100.0),
-      Vector2D(0.0, 0.0),
-      20.0
-  );
+  int northLanes = 2;
+  int southLanes = 2;
+  int eastLanes = 2;
+  int westLanes = 2;
 
-  Lane southLane(
-      2,
-      Vector2D(0.0, -100.0),
-      Vector2D(0.0, 0.0),
-      20.0
-  );
+  if (m_config.topology == IntersectionTopology::Lanes_2x3) {
+    eastLanes = 3;
+    westLanes = 3;
+  } else if (m_config.topology == IntersectionTopology::Lanes_3x3) {
+    northLanes = 3;
+    southLanes = 3;
+    eastLanes = 3;
+    westLanes = 3;
+  }
 
-  Lane eastLane(
-      3,
-      Vector2D(100.0, 0.0),
-      Vector2D(0.0, 0.0),
-      20.0
-  );
+  int laneId = 1;
+  const double laneWidth = 3.5;
 
-  Lane westLane(
-      4,
-      Vector2D(-100.0, 0.0),
-      Vector2D(0.0, 0.0),
-      20.0
-  );
+  for (int i = 0; i < northLanes; ++i) {
+    double x = (i + 0.5) * laneWidth;
 
-  m_intersection.addLane(DirectionId::North, northLane);
-  m_intersection.addLane(DirectionId::South, southLane);
-  m_intersection.addLane(DirectionId::East, eastLane);
-  m_intersection.addLane(DirectionId::West, westLane);
+    Lane lane(
+        laneId++,
+        Vector2D(x, 100.0),
+        Vector2D(x, 0.0),
+        20.0
+    );
+
+    m_intersection.addLane(DirectionId::North, lane);
+  }
+
+  for (int i = 0; i < southLanes; ++i) {
+    double x = -(i + 0.5) * laneWidth;
+
+    Lane lane(
+        laneId++,
+        Vector2D(x, -100.0),
+        Vector2D(x, 0.0),
+        20.0
+    );
+
+    m_intersection.addLane(DirectionId::South, lane);
+  }
+
+  for (int i = 0; i < eastLanes; ++i) {
+    double y = -(i + 0.5) * laneWidth;
+
+    Lane lane(
+        laneId++,
+        Vector2D(100.0, y),
+        Vector2D(0.0, y),
+        20.0
+    );
+
+    m_intersection.addLane(DirectionId::East, lane);
+  }
+
+  for (int i = 0; i < westLanes; ++i) {
+    double y = (i + 0.5) * laneWidth;
+
+    Lane lane(
+        laneId++,
+        Vector2D(-100.0, y),
+        Vector2D(0.0, y),
+        20.0
+    );
+
+    m_intersection.addLane(DirectionId::West, lane);
+  }
 
   TrafficLight northLight(1, DirectionId::North);
   TrafficLight southLight(2, DirectionId::South);
@@ -65,44 +102,65 @@ void SimulationEngine::initializeIntersection() {
 
 void SimulationEngine::updateTrafficLights(double dt) {
   if (dt <= 0.0) {
-      return;
+    return;
   }
 
   m_trafficLightPhaseTime += dt;
-
-  double verticalGreenTime =
-      static_cast<double>(m_config.north.greenZ);
-
-  double horizontalGreenTime =
-      static_cast<double>(m_config.east.greenZ);
+  const double verticalGreenTime = static_cast<double>(m_config.north.greenZ);
+  const double horizontalGreenTime = static_cast<double>(m_config.east.greenZ);
+  const double yellowTime = 3.0;
 
   if (m_trafficLightPhaseTime < verticalGreenTime) {
-      for (TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
-          if (trafficLight.getDirection() == DirectionId::North ||
-              trafficLight.getDirection() == DirectionId::South) {
-              trafficLight.setColor(LightColor::Green);
-          } else {
-              trafficLight.setColor(LightColor::Red);
-          }
+    for (TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
+      if (trafficLight.getDirection() == DirectionId::North ||
+          trafficLight.getDirection() == DirectionId::South) {
+        trafficLight.setColor(LightColor::Green);
+      } else {
+        trafficLight.setColor(LightColor::Red);
       }
-  } else if (m_trafficLightPhaseTime < verticalGreenTime + horizontalGreenTime) {
-      for (TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
-          if (trafficLight.getDirection() == DirectionId::North ||
-              trafficLight.getDirection() == DirectionId::South) {
-              trafficLight.setColor(LightColor::Red);
-          } else {
-              trafficLight.setColor(LightColor::Green);
-          }
+    }
+
+  } else if (m_trafficLightPhaseTime < verticalGreenTime + yellowTime) {
+    for (TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
+      if (trafficLight.getDirection() == DirectionId::North ||
+          trafficLight.getDirection() == DirectionId::South) {
+        trafficLight.setColor(LightColor::Yellow);
+      } else {
+        trafficLight.setColor(LightColor::Red);
       }
+    }
+
+  } else if (m_trafficLightPhaseTime < verticalGreenTime + yellowTime + horizontalGreenTime) {
+    for (TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
+      if (trafficLight.getDirection() == DirectionId::North ||
+          trafficLight.getDirection() == DirectionId::South) {
+        trafficLight.setColor(LightColor::Red);
+      } else {
+        trafficLight.setColor(LightColor::Green);
+      }
+    }
+
+  } else if (m_trafficLightPhaseTime < verticalGreenTime + yellowTime + horizontalGreenTime + yellowTime) {
+
+    for (TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
+      if (trafficLight.getDirection() == DirectionId::North ||
+          trafficLight.getDirection() == DirectionId::South) {
+        trafficLight.setColor(LightColor::Red);
+      } else {
+        trafficLight.setColor(LightColor::Yellow);
+      }
+    }
+
   } else {
-      m_trafficLightPhaseTime = 0.0;
-      for (TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
-        if (trafficLight.getDirection() == DirectionId::North ||
-            trafficLight.getDirection() == DirectionId::South) {
-            trafficLight.setColor(LightColor::Green);
-        } else {
-            trafficLight.setColor(LightColor::Red);
-          }
+    m_trafficLightPhaseTime = 0.0;
+
+    for (TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
+      if (trafficLight.getDirection() == DirectionId::North ||
+          trafficLight.getDirection() == DirectionId::South) {
+        trafficLight.setColor(LightColor::Green);
+      } else {
+        trafficLight.setColor(LightColor::Red);
+      }
     }
   }
 }
@@ -113,53 +171,123 @@ void SimulationEngine::updateVehicles(double dt) {
   }
 
   for (Vehicle& vehicle : m_vehicles) {
-    DirectionId direction;
+    DirectionId direction = vehicle.getApproachDirection();
 
-    if (vehicle.getAngleDeg() == -90.0) {
-        direction = DirectionId::North;
-    } else if (vehicle.getAngleDeg() == 90.0) {
-        direction = DirectionId::South;
-    } else if (vehicle.getAngleDeg() == 180.0) {
-        direction = DirectionId::East;
-    } else {
-        direction = DirectionId::West;
-    }
+  double halfRoadWidth = 7.0;
 
-    double halfRoadWidth = 7.0;
+  if (m_config.topology == IntersectionTopology::Lanes_3x3) {
+    halfRoadWidth = 10.5;
+  }
 
-    if (m_config.topology == IntersectionTopology::Lanes_3x3) {
-      halfRoadWidth = 10.5;
-    }
-    double stopLine = halfRoadWidth + 4.0 + 2.25;
+  double stopLine = halfRoadWidth + 4.0 + 2.25;
 
-    bool isRed = false;
+    bool redOrYellow = false;
 
-    for (const TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
+    for (const TrafficLight& trafficLight :
+         m_intersection.getTrafficLights()) {
+
       if (trafficLight.getDirection() == direction) {
-        isRed = (trafficLight.getColor() == LightColor::Red);
+        LightColor color = trafficLight.getColor();
+
+        redOrYellow =
+            color == LightColor::Red ||
+            color == LightColor::Yellow;
+
         break;
       }
     }
 
-    bool shouldStop = false;
+    Vector2D currentPosition = vehicle.getPosition();
 
-    for (const TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
-      if (trafficLight.getDirection() == direction) {
-        shouldStop = MovementLogic::shouldStopAtRedLight(
-          vehicle,
-          trafficLight,
-          stopLine);
-        break;
+    bool hasLeader = false;
+    double nearestGap = 1000000.0;
+    double leaderSpeedKmh = vehicle.getDesiredSpeed();
+
+    for (const Vehicle& other : m_vehicles) {
+
+      if (other.getId() == vehicle.getId()) {
+        continue;
+      }
+
+      if (other.getApproachDirection() != direction) {
+        continue;
+      }
+
+      if (other.getLaneId() != vehicle.getLaneId()) {
+        continue;
+      }
+
+      Vector2D otherPosition = other.getPosition();
+
+      double distanceAhead = -1.0;
+
+      if (direction == DirectionId::North) {
+        distanceAhead =
+            currentPosition.y - otherPosition.y;
+      } else if (direction == DirectionId::South) {
+        distanceAhead =
+            otherPosition.y - currentPosition.y;
+      } else if (direction == DirectionId::East) {
+        distanceAhead =
+            currentPosition.x - otherPosition.x;
+      } else if (direction == DirectionId::West) {
+        distanceAhead =
+            otherPosition.x - currentPosition.x;
+      }
+
+      if (distanceAhead <= 0.0) {
+        continue;
+      }
+
+      double gap = distanceAhead - 4.5;
+
+      if (gap < nearestGap) {
+        nearestGap = gap;
+        leaderSpeedKmh = other.getSpeed();
+        hasLeader = true;
       }
     }
 
-    if (shouldStop) {
-      MovementLogic::stopVehicleAtRedLight(vehicle, dt, direction, stopLine);
-      continue;
+    if (redOrYellow) {
+
+      double distanceToStopLine = -1.0;
+
+      if (direction == DirectionId::North) {
+        distanceToStopLine =
+            currentPosition.y - stopLine;
+      } else if (direction == DirectionId::South) {
+        distanceToStopLine =
+            -currentPosition.y - stopLine;
+      } else if (direction == DirectionId::East) {
+        distanceToStopLine =
+            currentPosition.x - stopLine;
+      } else if (direction == DirectionId::West) {
+        distanceToStopLine =
+            -currentPosition.x - stopLine;
+      }
+
+      if (distanceToStopLine > 0.0 &&
+          distanceToStopLine <= m_config.visibilityDistance &&
+          distanceToStopLine < nearestGap) {
+
+        nearestGap = distanceToStopLine;
+        leaderSpeedKmh = 0.0;
+        hasLeader = true;
+      }
     }
 
-    vehicle.setBraking(false);
-    vehicle.setWaitingInQueue(false);
+    double acceleration =
+        MovementLogic::calculateIDMAcceleration(
+            vehicle,
+            nearestGap,
+            leaderSpeedKmh);
+
+    vehicle.setAcceleration(acceleration);
+
+    vehicle.setBraking(acceleration < -0.5);
+
+    vehicle.setWaitingInQueue(
+        vehicle.getSpeed() < 0.5 && hasLeader);
 
     MovementLogic::moveVehicle(vehicle, dt);
   }
@@ -208,7 +336,21 @@ void SimulationEngine::step(double dt) {
   std::vector<Vehicle> generatedVehicles = m_trafficGenerator.takeGeneratedVehicles();
 
   for (Vehicle& vehicle : generatedVehicles) {
-    m_vehicles.push_back(vehicle);
+    bool canSpawn = true;
+
+    for (const Vehicle& existingVehicle : m_vehicles) {
+      if (vehicle.getApproachDirection() != existingVehicle.getApproachDirection()) {
+        continue;
+      }
+        Vector2D difference = vehicle.getPosition() - existingVehicle.getPosition();
+        if (difference.length() < 8.0) {
+          canSpawn = false;
+          break;
+        }
+    }
+    if (canSpawn) {
+      m_vehicles.push_back(vehicle);
+    }
   }
 
   updateVehicles(dt);
@@ -217,8 +359,20 @@ void SimulationEngine::step(double dt) {
 
 
 void SimulationEngine::updateConfig(const SimulationConfig& config) {
+  bool topologyChanged = (m_config.topology != config.topology);
+
   m_config = config;
   m_trafficGenerator.setConfig(m_config);
+
+  if (topologyChanged) {
+    m_vehicles.clear();
+
+    m_intersection = Intersection(Vector2D(0.0, 0.0));
+
+    m_trafficLightPhaseTime = 0.0;
+
+    initializeIntersection();
+  }
 }
 
 SimulationSnapshot SimulationEngine::getSnapshot() const {
