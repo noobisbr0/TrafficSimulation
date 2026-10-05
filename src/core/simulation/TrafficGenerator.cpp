@@ -57,6 +57,7 @@ double TrafficGenerator::generateNextSpawnInterval(DirectionId direction) {
 
   return -3600.0 / flow * std::log(u);
 }
+
 bool TrafficGenerator::generateVehicle(DirectionId direction) {
   if (m_intersection == nullptr) {
     return false;
@@ -98,9 +99,9 @@ bool TrafficGenerator::generateVehicle(DirectionId direction) {
 
   } else if (laneCount == 2) {
 
-    if (turnDirection == TurnDirection::Left) {
+    if (turnDirection == TurnDirection::Right) {
       laneIndex = 0;
-    } else if (turnDirection == TurnDirection::Right) {
+    } else if (turnDirection == TurnDirection::Left) {
       laneIndex = 1;
     } else {
       std::uniform_int_distribution<int> straightLaneDistribution(0, 1);
@@ -109,7 +110,7 @@ bool TrafficGenerator::generateVehicle(DirectionId direction) {
 
   } else {
 
-    if (turnDirection == TurnDirection::Left) {
+    if (turnDirection == TurnDirection::Right) {
       laneIndex = 0;
     } else if (turnDirection == TurnDirection::Straight) {
       laneIndex = 1;
@@ -127,6 +128,37 @@ bool TrafficGenerator::generateVehicle(DirectionId direction) {
       position,
       speed,
       turnDirection);
+
+    DirectionId targetDirection = direction;
+
+  if (turnDirection == TurnDirection::Right) {
+
+    if (direction == DirectionId::North) {
+      targetDirection = DirectionId::West;
+    } else if (direction == DirectionId::South) {
+      targetDirection = DirectionId::East;
+    } else if (direction == DirectionId::East) {
+      targetDirection = DirectionId::North;
+    } else {
+      targetDirection = DirectionId::South;
+    }
+
+  } else if (turnDirection == TurnDirection::Left) {
+
+    if (direction == DirectionId::North) {
+      targetDirection = DirectionId::East;
+    } else if (direction == DirectionId::South) {
+      targetDirection = DirectionId::West;
+    } else if (direction == DirectionId::East) {
+      targetDirection = DirectionId::South;
+    } else {
+      targetDirection = DirectionId::North;
+    }
+  }
+
+  vehicle.setTargetDirection(targetDirection);
+
+  vehicle.setTargetDirection(targetDirection);
 
   vehicle.setDesiredSpeed(speed);
 

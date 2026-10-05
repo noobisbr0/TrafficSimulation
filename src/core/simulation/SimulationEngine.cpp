@@ -124,6 +124,24 @@ void SimulationEngine::updateVehicles(double dt) {
 
   double stopLine = halfRoadWidth + 4.0 + 2.25;
 
+  Vector2D position = vehicle.getPosition();
+
+  bool reachedIntersection = false;
+
+  if (direction == DirectionId::North) {
+    reachedIntersection =
+        position.y <= halfRoadWidth;
+  } else if (direction == DirectionId::South) {
+    reachedIntersection =
+        position.y >= -halfRoadWidth;
+  } else if (direction == DirectionId::East) {
+    reachedIntersection =
+        position.x <= halfRoadWidth;
+  } else if (direction == DirectionId::West) {
+    reachedIntersection =
+        position.x >= -halfRoadWidth;
+  }
+
     bool redOrYellow = false;
 
     for (const TrafficLight& trafficLight :
@@ -229,8 +247,21 @@ void SimulationEngine::updateVehicles(double dt) {
 
     vehicle.setBraking(acceleration < -0.5);
 
-    vehicle.setWaitingInQueue(
-        vehicle.getSpeed() < 0.5 && hasLeader);
+    vehicle.setWaitingInQueue(vehicle.getSpeed() < 0.5 && hasLeader);
+
+    if ((vehicle.getTurnDirection() == TurnDirection::Right ||
+      vehicle.getTurnDirection() == TurnDirection::Left) &&
+      !vehicle.isTurning() &&
+      !vehicle.isTurnCompleted() &&
+      reachedIntersection) {
+
+        MovementLogic::startTurn(vehicle);
+    }
+
+    if (vehicle.isTurning()) {
+      MovementLogic::processTurn(vehicle, dt);
+      continue;
+    }
 
     MovementLogic::moveVehicle(vehicle, dt);
   }

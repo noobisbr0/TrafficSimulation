@@ -9,10 +9,14 @@ Vehicle::Vehicle(int id, const Vector2D& position, double speed, TurnDirection t
     m_angleDeg(0.0),
     m_turnDirection(turnDirection),
     m_approachDirection(DirectionId::North),
+    m_targetDirection(DirectionId::North),
     m_laneId(0),
     m_isTurning(false),
     m_targetAngleDeg(0.0),
     m_turnProgress(0.0),
+    m_turnCompleted(false),
+    m_turnCenter(0.0, 0.0),
+    m_turnStartAngle(0.0),
     m_isBraking(false),
     m_isWaitingInQueue(false) {
 }
@@ -47,6 +51,10 @@ TurnDirection Vehicle::getTurnDirection() const {
 
 DirectionId Vehicle::getApproachDirection() const {
     return m_approachDirection;
+}
+
+DirectionId Vehicle::getTargetDirection() const {
+  return m_targetDirection;
 }
 
 bool Vehicle::isTurning() const {
@@ -89,6 +97,10 @@ void Vehicle::setApproachDirection(DirectionId direction) {
     m_approachDirection = direction;
 }
 
+void Vehicle::setTargetDirection(DirectionId direction) {
+  m_targetDirection = direction;
+}
+
 void Vehicle::setLaneId(int laneId) {
   m_laneId = laneId;
 }
@@ -111,6 +123,30 @@ void Vehicle::setTurnProgress(double progress) {
 
 double Vehicle::getTurnProgress() const {
   return m_turnProgress;
+}
+
+void Vehicle::setTurnCompleted(bool completed) {
+    m_turnCompleted = completed;
+}
+
+bool Vehicle::isTurnCompleted() const {
+    return m_turnCompleted;
+}
+
+void Vehicle::setTurnCenter(const Vector2D& center) {
+  m_turnCenter = center;
+}
+
+Vector2D Vehicle::getTurnCenter() const {
+  return m_turnCenter;
+}
+
+void Vehicle::setTurnStartAngle(double angle) {
+  m_turnStartAngle = angle;
+}
+
+double Vehicle::getTurnStartAngle() const {
+  return m_turnStartAngle;
 }
 
 void Vehicle::setBraking(bool braking) {

@@ -15,6 +15,7 @@ public:
   double getAngleDeg() const;
   TurnDirection getTurnDirection() const;
   DirectionId getApproachDirection() const;
+  DirectionId getTargetDirection() const;
   int getLaneId() const;
   
   bool isTurning() const;
@@ -24,6 +25,12 @@ public:
   void setTargetAngleDeg(double angleDeg);
   void setTurnProgress(double progress);
   double getTurnProgress() const;
+  void setTurnCompleted(bool completed);
+  bool isTurnCompleted() const;
+  void setTurnCenter(const Vector2D& center);
+  Vector2D getTurnCenter() const;
+  void setTurnStartAngle(double angle);
+  double getTurnStartAngle() const;
 
   bool isBraking() const;
   bool isWaitingInQueue() const;
@@ -34,6 +41,7 @@ public:
   void setAcceleration(double acceleration);
   void setAngleDeg(double angleDeg);
   void setApproachDirection(DirectionId direction);
+  void setTargetDirection(DirectionId direction);
   void setLaneId(int laneId);
   void setBraking(bool braking);
   void setWaitingInQueue(bool waiting);
@@ -49,7 +57,11 @@ private:
   bool m_isTurning;
   double m_targetAngleDeg;
   double m_turnProgress;
+  bool m_turnCompleted;
+  Vector2D m_turnCenter;
+  double m_turnStartAngle;
   DirectionId m_approachDirection;
+  DirectionId m_targetDirection;
   int m_laneId;
 
   bool m_isBraking;

@@ -11,9 +11,9 @@ public:
   double leadSpeedKmh);
   static void moveVehicle(Vehicle& vehicle, double dt);
 
-  static void updateTurn(Vehicle& vehicle, DirectionId direction);
-
   static void processTurn(Vehicle& vehicle, double dt);
+
+  static void startTurn(Vehicle& vehicle);
 
   static bool shouldStopAtRedLight(
     const Vehicle& vehicle,
