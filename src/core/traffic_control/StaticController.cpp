@@ -33,7 +33,7 @@ void StaticController::setMainColors(
       trafficLight.setColor(eastWestColor);
     }
 
-    trafficLight.setLeftArrowGreen(false);
+    trafficLight.setLeftArrow(!m_config.permitLeftTurnFilter, false);
     trafficLight.setRightArrowGreen(false);
   }
 }
@@ -56,6 +56,23 @@ void StaticController::updatePhase(
           trafficLights,
           LightColor::Yellow,
           LightColor::Red);
+
+      break;
+
+      case Phase::NorthSouthLeftArrow:
+      setMainColors(
+          trafficLights,
+          LightColor::Red,
+          LightColor::Red);
+
+      if (!m_config.permitLeftTurnFilter) {
+        for (TrafficLight& trafficLight : trafficLights) {
+          if (trafficLight.getDirection() == DirectionId::North ||
+              trafficLight.getDirection() == DirectionId::South) {
+                trafficLight.setLeftArrow(true, true);
+          }
+        }
+      }
 
       break;
 
@@ -83,6 +100,19 @@ void StaticController::updatePhase(
 
       break;
 
+      case Phase::EastWestLeftArrow:
+      setMainColors(trafficLights, LightColor::Red, LightColor::Red);
+      if (!m_config.permitLeftTurnFilter) {
+        for (TrafficLight& trafficLight : trafficLights) {
+          if (trafficLight.getDirection() == DirectionId::East ||
+              trafficLight.getDirection() == DirectionId::West) {
+            trafficLight.setLeftArrow(true, true);
+          }
+        }
+      }
+
+  break;
+
     case Phase::NorthSouthRedYellow:
       setMainColors(
           trafficLights,
@@ -90,13 +120,6 @@ void StaticController::updatePhase(
           LightColor::Red);
 
       break;
-  }
-
-  if (!m_config.permitLeftTurnFilter) {
-
-    for (TrafficLight& trafficLight : trafficLights) {
-      trafficLight.setLeftArrowGreen(true);
-    }
   }
 }
 
@@ -135,6 +158,10 @@ void StaticController::update(
     case Phase::NorthSouthYellow:
       phaseDuration = yellowTime;
       break;
+    
+    case Phase::NorthSouthLeftArrow:
+      phaseDuration = 5.0;
+      break;
 
     case Phase::EastWestRedYellow:
       phaseDuration = redYellowTime;
@@ -154,6 +181,10 @@ void StaticController::update(
       phaseDuration = yellowTime;
       break;
 
+    case Phase::EastWestLeftArrow:
+      phaseDuration = 5.0;
+      break;
+
     case Phase::NorthSouthRedYellow:
       phaseDuration = redYellowTime;
       break;
@@ -168,29 +199,45 @@ void StaticController::update(
 
   switch (m_phase) {
 
-    case Phase::NorthSouthGreen:
-      m_phase = Phase::NorthSouthYellow;
-      break;
+  case Phase::NorthSouthGreen:
+    m_phase = Phase::NorthSouthYellow;
+    break;
 
-    case Phase::NorthSouthYellow:
+  case Phase::NorthSouthYellow:
+    if (m_config.permitLeftTurnFilter) {
       m_phase = Phase::EastWestRedYellow;
-      break;
+    } else {
+      m_phase = Phase::NorthSouthLeftArrow;
+    }
+    break;
 
-    case Phase::EastWestRedYellow:
-      m_phase = Phase::EastWestGreen;
-      break;
+  case Phase::NorthSouthLeftArrow:
+    m_phase = Phase::EastWestRedYellow;
+    break;
 
-    case Phase::EastWestGreen:
-      m_phase = Phase::EastWestYellow;
-      break;
+  case Phase::EastWestRedYellow:
+    m_phase = Phase::EastWestGreen;
+    break;
 
-    case Phase::EastWestYellow:
+  case Phase::EastWestGreen:
+    m_phase = Phase::EastWestYellow;
+    break;
+
+  case Phase::EastWestYellow:
+    if (m_config.permitLeftTurnFilter) {
       m_phase = Phase::NorthSouthRedYellow;
-      break;
+    } else {
+      m_phase = Phase::EastWestLeftArrow;
+    }
+    break;
 
-    case Phase::NorthSouthRedYellow:
-      m_phase = Phase::NorthSouthGreen;
-      break;
+  case Phase::EastWestLeftArrow:
+    m_phase = Phase::NorthSouthRedYellow;
+    break;
+
+  case Phase::NorthSouthRedYellow:
+    m_phase = Phase::NorthSouthGreen;
+    break;
   }
 
   updatePhase(trafficLights);

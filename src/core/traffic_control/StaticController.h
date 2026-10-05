@@ -18,9 +18,11 @@ private:
   enum class Phase {
     NorthSouthGreen,
     NorthSouthYellow,
+    NorthSouthLeftArrow,
     EastWestRedYellow,
     EastWestGreen,
     EastWestYellow,
+    EastWestLeftArrow,
     NorthSouthRedYellow
   };
 
