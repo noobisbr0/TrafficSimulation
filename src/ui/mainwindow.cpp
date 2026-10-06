@@ -7,13 +7,13 @@
 #include "presenter/SimulationPresenter.h"
 #include "common/MockSimulationEngine.h"
 
-#include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QDockWidget>
+#include <QGroupBox>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent) {
-    setWindowTitle("Симулятор перекрестка (Frontend UI)");
+    setWindowTitle("Симулятор перекрестка");
     resize(1280, 720);
 
     auto engine = std::make_shared<MockSimulationEngine>();
@@ -31,13 +31,19 @@ MainWindow::MainWindow(QWidget* parent)
     auto* rightDock = new QDockWidget("Параметры", this);
     rightDock->setWidget(paramPanel);
     rightDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+    rightDock->setMinimumWidth(280);
+    rightDock->setMaximumWidth(320);
     addDockWidget(Qt::RightDockWidgetArea, rightDock);
 
     auto* leftDock = new QDockWidget("Управление и Аналитика", this);
     auto* leftWidget = new QWidget();
     auto* leftLayout = new QVBoxLayout(leftWidget);
+
     leftLayout->addWidget(ctrlPanel);
+    leftLayout->addWidget(paramPanel->getGlobalWidget());
     leftLayout->addWidget(statsPanel);
+    leftLayout->addStretch();
+
     leftDock->setWidget(leftWidget);
     addDockWidget(Qt::LeftDockWidgetArea, leftDock);
 

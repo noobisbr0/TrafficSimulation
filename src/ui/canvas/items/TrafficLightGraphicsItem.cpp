@@ -19,10 +19,8 @@ void TrafficLightGraphicsItem::paint(QPainter* painter, const QStyleOptionGraphi
     painter->drawRoundedRect(QRectF(-1.2, -3.2, 2.4, 6.4), 0.5, 0.5);
 
     auto drawLens = [&](double x, double y, LightColor color, LightColor activeColor) {
-        bool isActive = (m_data.mainColor == color || m_data.mainColor == LightColor::RedYellow);
-        if (color == LightColor::Yellow && m_data.mainColor == LightColor::Yellow) {
-            isActive = true;
-        }
+        const bool isActive = (m_data.mainColor == color || m_data.mainColor == LightColor::RedYellow) ||
+                              (color == LightColor::Yellow && m_data.mainColor == LightColor::Yellow);
 
         const QColor activeHex = (activeColor == LightColor::Red)    ? QColor("#FF1744") :
                                      (activeColor == LightColor::Yellow) ? QColor("#FFEA00") :

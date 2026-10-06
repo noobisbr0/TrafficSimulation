@@ -1,21 +1,23 @@
 #pragma once
 
 #include <QWidget>
-#include <QSlider>
-#include <QLabel>
-#include <QCheckBox>
-#include <QRadioButton>
-#include <QComboBox>
-#include <QTabWidget>
-#include <QTimer>
+#include <QGroupBox>
+#include <array>
 #include "common/SimulationConfig.h"
 
-class QHBoxLayout;
+class QSlider;
+class QSpinBox;
+class QCheckBox;
+class QRadioButton;
+class QComboBox;
+class QTimer;
+class QFormLayout;
 
 class ParametersPanel : public QWidget {
     Q_OBJECT
 public:
     explicit ParametersPanel(QWidget* parent = nullptr);
+    [[nodiscard]] QGroupBox* getGlobalWidget() const { return m_globalWidget; }
 
 signals:
     void configChanged(const SimulationConfig& config);
@@ -31,13 +33,14 @@ private:
         QSlider* slP{nullptr};
         QSlider* slZ{nullptr};
         QSlider* slK{nullptr};
-        QLabel* lblP{nullptr};
-        QLabel* lblZ{nullptr};
-        QLabel* lblK{nullptr};
+        QSpinBox* sbP{nullptr};
+        QSpinBox* sbZ{nullptr};
+        QSpinBox* sbK{nullptr};
     };
 
     QWidget* createApproachTab(ApproachUI& uiElements);
-    QHBoxLayout* createSliderRow(const QString& title, int min, int max, int val, QSlider*& sl, QLabel*& lbl);
+    void addSliderRow(QFormLayout* layout, const QString& title, int min, int max, int val, QSlider*& sl, QSpinBox*& sb);
+    [[nodiscard]] int calculatePhaseCount() const;
 
     QTimer* m_debounceTimer{nullptr};
     QRadioButton* m_rbStatic{nullptr};
@@ -51,16 +54,16 @@ private:
     QSlider* m_slPedZ{nullptr};
     QSlider* m_slPedFlow{nullptr};
 
-    QLabel* m_lblTotalT{nullptr};
-    QLabel* m_lblDistD{nullptr};
-    QLabel* m_lblPedZ{nullptr};
-    QLabel* m_lblPedFlow{nullptr};
+    QSpinBox* m_sbTotalT{nullptr};
+    QSpinBox* m_sbDistD{nullptr};
+    QSpinBox* m_sbPedZ{nullptr};
+    QSpinBox* m_sbPedFlow{nullptr};
 
     QSlider* m_slMinSpeed{nullptr};
     QSlider* m_slMaxSpeed{nullptr};
-    QLabel* m_lblMinSpeed{nullptr};
-    QLabel* m_lblMaxSpeed{nullptr};
+    QSpinBox* m_sbMinSpeed{nullptr};
+    QSpinBox* m_sbMaxSpeed{nullptr};
 
-    QTabWidget* m_tabWidget{nullptr};
-    ApproachUI m_approaches[4];
+    QGroupBox* m_globalWidget{nullptr};
+    std::array<ApproachUI, 4> m_approaches{};
 };

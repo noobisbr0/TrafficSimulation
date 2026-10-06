@@ -14,8 +14,6 @@ QRectF PedestrianTrafficLightGraphicsItem::boundingRect() const {
 void PedestrianTrafficLightGraphicsItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*) {
     painter->setRenderHint(QPainter::Antialiasing);
 
-    const int c = m_data.corner;
-
     auto drawBox = [&](double cx, double cy, bool isHoriz, PedestrianLightSignal sig) {
         const double w = isHoriz ? 2.4 : 1.0;
         const double h = isHoriz ? 1.0 : 2.4;
@@ -42,33 +40,29 @@ void PedestrianTrafficLightGraphicsItem::paint(QPainter* painter, const QStyleOp
         painter->drawEllipse(QPointF(gX, gY), radius, radius);
     };
 
-    double hBoxX = 0.0;
-    double hBoxY = 0.0;
-    double vBoxX = 0.0;
-    double vBoxY = 0.0;
+    struct BoxOffsetPair {
+        QPointF hBox;
+        QPointF vBox;
+    };
 
-    if (c == 0) {
-        hBoxX = 1.0;  hBoxY = -2.0;
-        vBoxX = -2.0; vBoxY = 1.0;
-    } else if (c == 1) {
-        hBoxX = -1.0; hBoxY = -2.0;
-        vBoxX = 2.0;  vBoxY = 1.0;
-    } else if (c == 2) {
-        hBoxX = 1.0;  hBoxY = 2.0;
-        vBoxX = -2.0; vBoxY = -1.0;
-    } else if (c == 3) {
-        hBoxX = -1.0; hBoxY = 2.0;
-        vBoxX = 2.0;  vBoxY = -1.0;
-    }
+    static constexpr BoxOffsetPair kOffsets[4] = {
+        { { 1.0, -2.0}, {-2.0,  1.0} },
+        { {-1.0, -2.0}, { 2.0,  1.0} },
+        { { 1.0,  2.0}, {-2.0, -1.0} },
+        { {-1.0,  2.0}, { 2.0, -1.0} }
+    };
+
+    const int c = m_data.corner;
+    const auto [hBox, vBox] = (c >= 0 && c < 4) ? kOffsets[c] : kOffsets[0];
 
     painter->setPen(QPen(QColor("#252836"), 0.3, Qt::SolidLine, Qt::RoundCap));
-    painter->drawLine(QPointF(0, 0), QPointF(hBoxX, hBoxY));
-    painter->drawLine(QPointF(0, 0), QPointF(vBoxX, vBoxY));
+    painter->drawLine(QPointF(0, 0), hBox);
+    painter->drawLine(QPointF(0, 0), vBox);
 
     painter->setPen(Qt::NoPen);
     painter->setBrush(QColor("#3A3F55"));
     painter->drawEllipse(QPointF(0, 0), 0.4, 0.4);
 
-    drawBox(hBoxX, hBoxY, true, m_data.signalEW);
-    drawBox(vBoxX, vBoxY, false, m_data.signalNS);
+    drawBox(hBox.x(), hBox.y(), true, m_data.signalEW);
+    drawBox(vBox.x(), vBox.y(), false, m_data.signalNS);
 }
