@@ -4,7 +4,9 @@ TrafficGenerator::TrafficGenerator(Intersection* intersection)
   : m_intersection(intersection),
     m_random(std::random_device{}()),
     m_nextVehicleId(1),
-    m_timeUntilNextVehicle{0.0, 0.0, 0.0, 0.0} {
+    m_timeUntilNextVehicle{0.0, 0.0, 0.0, 0.0},
+    m_timeUntilNextPedestrian{0.0, 0.0, 0.0, 0.0},
+    m_nextPedestrianId(1) {
 }
 
 void TrafficGenerator::setConfig(const SimulationConfig& config) {
@@ -185,6 +187,133 @@ bool TrafficGenerator::generateVehicle(DirectionId direction) {
   return true;
 }
 
+bool TrafficGenerator::generatePedestrian(int crossingIndex) {
+  if (crossingIndex < 0 || crossingIndex >= 4) {
+    return false;
+  }
+
+  double halfNS = 7.0;
+  double halfEW = 7.0;
+
+  if (m_config.topology == IntersectionTopology::Lanes_2x3) {
+    halfEW = 10.5;
+  } else if (m_config.topology == IntersectionTopology::Lanes_3x3) {
+    halfNS = 10.5;
+    halfEW = 10.5;
+  }
+
+  // Пешеходы появляются за пределами проезжей части
+  // и идут через соответствующую "зебру".
+  const double offset = 2.5;
+
+  Vector2D position;
+  DirectionId moveDirection;
+  DirectionId crossingDirection;
+
+  if (crossingIndex == 0) {
+    // Северный переход: слева направо.
+    position = Vector2D(
+        -halfNS - offset,
+        -(halfEW + 1.5));
+
+    moveDirection = DirectionId::East;
+    crossingDirection = DirectionId::North;
+
+  } else if (crossingIndex == 1) {
+    // Южный переход: справа налево.
+    position = Vector2D(
+        halfNS + offset,
+        halfEW + 1.5);
+
+    moveDirection = DirectionId::West;
+    crossingDirection = DirectionId::South;
+
+  } else if (crossingIndex == 2) {
+    // Восточный переход: снизу вверх.
+    position = Vector2D(
+        halfNS + 1.5,
+        halfEW + offset);
+
+    moveDirection = DirectionId::North;
+    crossingDirection = DirectionId::East;
+
+  } else {
+    // Западный переход: сверху вниз.
+    position = Vector2D(
+        -(halfNS + 1.5),
+        -halfEW - offset);
+
+    moveDirection = DirectionId::South;
+    crossingDirection = DirectionId::West;
+  }
+
+  Pedestrian pedestrian(
+      m_nextPedestrianId++,
+      position);
+
+  std::uniform_real_distribution<double> speedDistribution(
+      1.0,
+      1.5);
+
+  pedestrian.setSpeed(
+      speedDistribution(m_random));
+
+  pedestrian.setMoveDirection(moveDirection);
+  pedestrian.setTargetCrossing(crossingDirection);
+  pedestrian.setWaiting(true);
+
+  m_generatedPedestrians.push_back(pedestrian);
+
+  return true;
+}
+
+void TrafficGenerator::updatePedestrians(double dt) {
+  if (dt <= 0.0) {
+    return;
+  }
+
+  const double totalFlow =
+      m_config.pedestrianFlow;
+
+  if (totalFlow <= 0.0) {
+    return;
+  }
+
+  const double flowPerCrossing =
+      totalFlow / 4.0;
+
+  for (int i = 0; i < 4; ++i) {
+
+    m_timeUntilNextPedestrian[i] -= dt;
+
+    int generatedThisStep = 0;
+
+    while (m_timeUntilNextPedestrian[i] <= 0.0 &&
+           generatedThisStep < 10) {
+
+      if (!generatePedestrian(i)) {
+        m_timeUntilNextPedestrian[i] = 1.0;
+        break;
+      }
+
+      std::uniform_real_distribution<double> distribution(
+          1e-9,
+          1.0);
+
+      double u = distribution(m_random);
+
+      double interval =
+          -3600.0 /
+          flowPerCrossing *
+          std::log(u);
+
+      m_timeUntilNextPedestrian[i] += interval;
+
+      generatedThisStep++;
+    }
+  }
+}
+
 void TrafficGenerator::update(double dt) {
   if (dt <= 0.0) {
     return;
@@ -230,9 +359,21 @@ void TrafficGenerator::update(double dt) {
       generatedThisStep++;
     }
   }
+  updatePedestrians(dt);
 }
+
 std::vector<Vehicle> TrafficGenerator::takeGeneratedVehicles() {
   std::vector<Vehicle> vehicles = std::move(m_generatedVehicles);
   m_generatedVehicles.clear();
   return vehicles;
+}
+
+std::vector<Pedestrian> TrafficGenerator::takeGeneratedPedestrians() {
+
+  std::vector<Pedestrian> pedestrians =
+      std::move(m_generatedPedestrians);
+
+  m_generatedPedestrians.clear();
+
+  return pedestrians;
 }
