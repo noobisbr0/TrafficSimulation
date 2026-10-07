@@ -89,22 +89,19 @@ void SimulationEngine::updateVehicles(double dt) {
         else if (direction == DirectionId::West) reachedIntersection = currentPosition.x >= -halfRoadWidth;
 
         bool redOrYellow = false;
+        bool leftArrowGreen = false;
         for (const TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
             if (trafficLight.getDirection() == direction) {
                 LightColor color = trafficLight.getColor();
-                redOrYellow = color == LightColor::Red || color == LightColor::Yellow || color == LightColor::RedYellow;
+                redOrYellow = (color == LightColor::Red || color == LightColor::Yellow || color == LightColor::RedYellow);
+                leftArrowGreen = trafficLight.isLeftArrowGreen();
                 break;
             }
         }
 
-        bool mustWaitForLeftArrow = false;
+        bool stopAtLight = redOrYellow;
         if (vehicle.getTurnDirection() == TurnDirection::Left && !m_config.permitLeftTurnFilter) {
-            for (const TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
-                if (trafficLight.getDirection() == direction) {
-                    mustWaitForLeftArrow = !trafficLight.isLeftArrowGreen();
-                    break;
-                }
-            }
+            stopAtLight = !leftArrowGreen;
         }
 
         bool hasLeader = false;
@@ -154,7 +151,7 @@ void SimulationEngine::updateVehicles(double dt) {
             }
         }
 
-        if (redOrYellow || mustWaitForLeftArrow) {
+        if (stopAtLight) {
             double distanceToStopLine = -1.0;
             if (direction == DirectionId::North) distanceToStopLine = currentPosition.y - stopLine;
             else if (direction == DirectionId::South) distanceToStopLine = -currentPosition.y - stopLine;
