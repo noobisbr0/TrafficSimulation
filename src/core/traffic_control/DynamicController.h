@@ -9,60 +9,64 @@
 
 class DynamicController {
 public:
-  DynamicController();
+    DynamicController();
 
-  void setConfig(const SimulationConfig& config);
+    void setConfig(const SimulationConfig& config);
 
-  void update(
-      double dt,
-      std::vector<TrafficLight>& trafficLights);
+    void update(
+        double dt,
+        std::vector<TrafficLight>& trafficLights);
 
-  void update(
-      double dt,
-      std::vector<TrafficLight>& trafficLights,
-      const std::vector<Vehicle>& vehicles);
+    void update(
+        double dt,
+        std::vector<TrafficLight>& trafficLights,
+        const std::vector<Vehicle>& vehicles);
 
-  void reset();
-
-private:
-  enum class Phase {
-    GreenNS,
-    YellowNS,
-    RedYellowEW,
-    GreenEW,
-    YellowEW,
-    RedYellowNS
-  };
-
-  static int directionIndex(DirectionId direction);
-
-  void updateQueueCounts(
-      const std::vector<Vehicle>& vehicles);
-
-  void applyPhase(
-      std::vector<TrafficLight>& trafficLights) const;
-
-  void switchToYellowNS(
-      std::vector<TrafficLight>& trafficLights);
-
-  void switchToRedYellowEW(
-      std::vector<TrafficLight>& trafficLights);
-
-  void switchToYellowEW(
-      std::vector<TrafficLight>& trafficLights);
-
-  void switchToRedYellowNS(
-      std::vector<TrafficLight>& trafficLights);
-
-  int getCurrentQueue() const;
-  int getOppositeQueue() const;
+    void reset();
 
 private:
-  SimulationConfig m_config;
+    enum class Phase {
+        GreenNS,
+        YellowNS,
+        RedYellowEW,
+        GreenEW,
+        YellowEW,
+        AllRedPedestrian,
+        RedYellowNS
+    };
 
-  Phase m_phase;
-  double m_phaseTime;
-  double m_greenDuration;
+    static int directionIndex(DirectionId direction);
 
-  std::array<int, 4> m_queueCounts;
+    void updateQueueCounts(
+        const std::vector<Vehicle>& vehicles);
+
+    void applyPhase(
+        std::vector<TrafficLight>& trafficLights) const;
+
+    void switchToYellowNS(
+        std::vector<TrafficLight>& trafficLights);
+
+    void switchToRedYellowEW(
+        std::vector<TrafficLight>& trafficLights);
+
+    void switchToYellowEW(
+        std::vector<TrafficLight>& trafficLights);
+
+    void switchToAllRedPedestrian(
+        std::vector<TrafficLight>& trafficLights);
+
+    void switchToRedYellowNS(
+        std::vector<TrafficLight>& trafficLights);
+
+    int getCurrentQueue() const;
+    int getOppositeQueue() const;
+
+private:
+    SimulationConfig m_config;
+
+    Phase m_phase;
+    double m_phaseTime;
+    double m_greenDuration;
+
+    std::array<int, 4> m_queueCounts;
 };
