@@ -26,11 +26,19 @@ void DynamicController::updateQueueCounts(const std::vector<Vehicle>& vehicles) 
     double halfRoadWidthNS = 7.0;
     double halfRoadWidthEW = 7.0;
 
-    if (m_config.topology == IntersectionTopology::Lanes_2x3) halfRoadWidthEW = 10.5;
-    if (m_config.topology == IntersectionTopology::Lanes_3x3) { halfRoadWidthNS = 10.5; halfRoadWidthEW = 10.5; }
+    if (m_config.topology == IntersectionTopology::Lanes_2x3) {
+        halfRoadWidthEW = 10.5;
+    }
+    if (m_config.topology == IntersectionTopology::Lanes_3x3) {
+        halfRoadWidthNS = 10.5;
+        halfRoadWidthEW = 10.5;
+    }
 
     for (const Vehicle& vehicle : vehicles) {
-        if (vehicle.getSpeed() >= 0.5) continue;
+        if (vehicle.getSpeed() >= 0.5) {
+            continue;
+        }
+
         DirectionId direction = vehicle.getApproachDirection();
         Vector2D position = vehicle.getPosition();
         double distanceToStopLine = -1.0;
@@ -50,16 +58,21 @@ void DynamicController::updateQueueCounts(const std::vector<Vehicle>& vehicles) 
             distanceToStopLine = -position.x - stopLine;
         }
 
-        if (distanceToStopLine < 0.0 || distanceToStopLine > m_config.visibilityDistance) continue;
+        if (distanceToStopLine < 0.0 || distanceToStopLine > m_config.visibilityDistance) {
+            continue;
+        }
         int index = directionIndex(direction);
         ++m_queueCounts[index];
     }
 }
 
 void DynamicController::applyPhase(std::vector<TrafficLight>& trafficLights) const {
-    bool nsGreen = false, ewGreen = false;
-    bool nsYellow = false, ewYellow = false;
-    bool nsRedYellow = false, ewRedYellow = false;
+    bool nsGreen = false;
+    bool ewGreen = false;
+    bool nsYellow = false;
+    bool ewYellow = false;
+    bool nsRedYellow = false;
+    bool ewRedYellow = false;
     bool allRed = (m_phase == Phase::AllRedPedestrian);
 
     if (m_phase == Phase::GreenNS) nsGreen = true;
@@ -132,11 +145,16 @@ void DynamicController::switchToRedYellowNS(std::vector<TrafficLight>& trafficLi
 }
 
 void DynamicController::update(double dt, std::vector<TrafficLight>& trafficLights) {
-    if (dt <= 0.0) return;
+    if (dt <= 0.0) {
+        return;
+    }
     m_phaseTime += dt;
 
     if (m_phase == Phase::GreenNS) {
-        if (m_phaseTime < m_greenDuration) { applyPhase(trafficLights); return; }
+        if (m_phaseTime < m_greenDuration) {
+            applyPhase(trafficLights);
+            return;
+        }
         int currentQueue = getCurrentQueue();
         int oppositeQueue = getOppositeQueue();
 
@@ -151,7 +169,9 @@ void DynamicController::update(double dt, std::vector<TrafficLight>& trafficLigh
     }
 
     if (m_phase == Phase::YellowNS) {
-        if (m_phaseTime >= 3.0) switchToRedYellowEW(trafficLights);
+        if (m_phaseTime >= 3.0) {
+            switchToRedYellowEW(trafficLights);
+        }
         return;
     }
 
@@ -166,7 +186,10 @@ void DynamicController::update(double dt, std::vector<TrafficLight>& trafficLigh
     }
 
     if (m_phase == Phase::GreenEW) {
-        if (m_phaseTime < m_greenDuration) { applyPhase(trafficLights); return; }
+        if (m_phaseTime < m_greenDuration) {
+            applyPhase(trafficLights);
+            return;
+        }
         int currentQueue = getCurrentQueue();
         int oppositeQueue = getOppositeQueue();
 
@@ -182,14 +205,19 @@ void DynamicController::update(double dt, std::vector<TrafficLight>& trafficLigh
 
     if (m_phase == Phase::YellowEW) {
         if (m_phaseTime >= 3.0) {
-            if (!m_config.hasRightTurnArrow) switchToAllRedPedestrian(trafficLights);
-            else switchToRedYellowNS(trafficLights);
+            if (!m_config.hasRightTurnArrow) {
+                switchToAllRedPedestrian(trafficLights);
+            } else {
+                switchToRedYellowNS(trafficLights);
+            }
         }
         return;
     }
 
     if (m_phase == Phase::AllRedPedestrian) {
-        if (m_phaseTime >= m_config.pedestrianGreenSec) switchToRedYellowNS(trafficLights);
+        if (m_phaseTime >= m_config.pedestrianGreenSec) {
+            switchToRedYellowNS(trafficLights);
+        }
         return;
     }
 
@@ -204,7 +232,10 @@ void DynamicController::update(double dt, std::vector<TrafficLight>& trafficLigh
     }
 }
 
-void DynamicController::update(double dt, std::vector<TrafficLight>& trafficLights, const std::vector<Vehicle>& vehicles) {
+void DynamicController::update(
+    double dt,
+    std::vector<TrafficLight>& trafficLights,
+    const std::vector<Vehicle>& vehicles) {
     updateQueueCounts(vehicles);
     update(dt, trafficLights);
 }

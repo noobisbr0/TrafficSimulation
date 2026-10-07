@@ -58,7 +58,6 @@ void StaticController::updatePhase(
         break;
 
     case Phase::EastWestRedYellow:
-        // Заменено RedYellow на Yellow для предотвращения бага фронтенда
         setMainColors(trafficLights, LightColor::Red, LightColor::Yellow);
         break;
 
@@ -87,7 +86,6 @@ void StaticController::updatePhase(
         break;
 
     case Phase::NorthSouthRedYellow:
-        // Заменено RedYellow на Yellow
         setMainColors(trafficLights, LightColor::Yellow, LightColor::Red);
         break;
     }
@@ -97,33 +95,55 @@ void StaticController::update(
     double dt,
     std::vector<TrafficLight>& trafficLights) {
 
-    if (dt <= 0.0 || trafficLights.empty()) return;
+    if (dt <= 0.0 || trafficLights.empty()) {
+        return;
+    }
 
     m_phaseTime += dt;
 
     double greenTime = static_cast<double>(m_config.north.greenZ);
-    if (greenTime <= 0.0) greenTime = 30.0;
+    if (greenTime <= 0.0) {
+        greenTime = 30.0;
+    }
 
     constexpr double yellowTime = 3.0;
     constexpr double redYellowTime = 1.5;
     double phaseDuration = 0.0;
 
     switch (m_phase) {
-    case Phase::NorthSouthGreen: phaseDuration = greenTime; break;
-    case Phase::NorthSouthYellow: phaseDuration = yellowTime; break;
-    case Phase::NorthSouthLeftArrow: phaseDuration = 5.0; break;
-    case Phase::EastWestRedYellow: phaseDuration = redYellowTime; break;
+    case Phase::NorthSouthGreen:
+        phaseDuration = greenTime;
+        break;
+    case Phase::NorthSouthYellow:
+        phaseDuration = yellowTime;
+        break;
+    case Phase::NorthSouthLeftArrow:
+        phaseDuration = 5.0;
+        break;
+    case Phase::EastWestRedYellow:
+        phaseDuration = redYellowTime;
+        break;
     case Phase::EastWestGreen:
         phaseDuration = static_cast<double>(m_config.east.greenZ);
-        if (phaseDuration <= 0.0) phaseDuration = greenTime;
+        if (phaseDuration <= 0.0) {
+            phaseDuration = greenTime;
+        }
         break;
-    case Phase::EastWestYellow: phaseDuration = yellowTime; break;
-    case Phase::EastWestLeftArrow: phaseDuration = 5.0; break;
+    case Phase::EastWestYellow:
+        phaseDuration = yellowTime;
+        break;
+    case Phase::EastWestLeftArrow:
+        phaseDuration = 5.0;
+        break;
     case Phase::AllRedPedestrian:
         phaseDuration = m_config.pedestrianGreenSec;
-        if (phaseDuration <= 0.0) phaseDuration = 15.0;
+        if (phaseDuration <= 0.0) {
+            phaseDuration = 15.0;
+        }
         break;
-    case Phase::NorthSouthRedYellow: phaseDuration = redYellowTime; break;
+    case Phase::NorthSouthRedYellow:
+        phaseDuration = redYellowTime;
+        break;
     }
 
     if (m_phaseTime < phaseDuration) {
@@ -139,8 +159,11 @@ void StaticController::update(
         break;
 
     case Phase::NorthSouthYellow:
-        if (m_config.permitLeftTurnFilter) m_phase = Phase::EastWestRedYellow;
-        else m_phase = Phase::NorthSouthLeftArrow;
+        if (m_config.permitLeftTurnFilter) {
+            m_phase = Phase::EastWestRedYellow;
+        } else {
+            m_phase = Phase::NorthSouthLeftArrow;
+        }
         break;
 
     case Phase::NorthSouthLeftArrow:
@@ -157,16 +180,22 @@ void StaticController::update(
 
     case Phase::EastWestYellow:
         if (m_config.permitLeftTurnFilter) {
-            if (!m_config.hasRightTurnArrow) m_phase = Phase::AllRedPedestrian;
-            else m_phase = Phase::NorthSouthRedYellow;
+            if (!m_config.hasRightTurnArrow) {
+                m_phase = Phase::AllRedPedestrian;
+            } else {
+                m_phase = Phase::NorthSouthRedYellow;
+            }
         } else {
             m_phase = Phase::EastWestLeftArrow;
         }
         break;
 
     case Phase::EastWestLeftArrow:
-        if (!m_config.hasRightTurnArrow) m_phase = Phase::AllRedPedestrian;
-        else m_phase = Phase::NorthSouthRedYellow;
+        if (!m_config.hasRightTurnArrow) {
+            m_phase = Phase::AllRedPedestrian;
+        } else {
+            m_phase = Phase::NorthSouthRedYellow;
+        }
         break;
 
     case Phase::AllRedPedestrian:
