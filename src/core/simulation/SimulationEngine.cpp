@@ -107,6 +107,38 @@ void SimulationEngine::initializeIntersection() {
 }
 
 void SimulationEngine::updateTrafficLights(double dt) {
+  bool pedestrianExclusivePhase = false;
+
+  if (!m_config.hasRightTurnArrow &&
+      m_config.totalCycleSec > 0.0 &&
+      m_config.pedestrianGreenSec > 0.0) {
+
+    double pedestrianGreenSec = m_config.pedestrianGreenSec;
+
+    if (pedestrianGreenSec > m_config.totalCycleSec) {
+      pedestrianGreenSec = m_config.totalCycleSec;
+    }
+
+    double cycleTime =
+        std::fmod(m_currentTime, m_config.totalCycleSec);
+
+    pedestrianExclusivePhase =
+        cycleTime >= m_config.totalCycleSec - pedestrianGreenSec;
+  }
+
+  if (pedestrianExclusivePhase) {
+    for (TrafficLight& trafficLight :
+         m_intersection.getTrafficLights()) {
+
+      trafficLight.setColor(LightColor::Red);
+
+      trafficLight.setLeftArrow(false, false);
+      trafficLight.setRightArrow(false, false);
+    }
+
+    return;
+  }
+
   if (m_config.mode == ControllerMode::Static) {
     m_staticController.update(
         dt,
