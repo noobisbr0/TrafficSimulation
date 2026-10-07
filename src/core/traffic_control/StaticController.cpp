@@ -58,7 +58,8 @@ void StaticController::updatePhase(
         break;
 
     case Phase::EastWestRedYellow:
-        setMainColors(trafficLights, LightColor::Red, LightColor::RedYellow);
+        // Заменено RedYellow на Yellow для предотвращения бага фронтенда
+        setMainColors(trafficLights, LightColor::Red, LightColor::Yellow);
         break;
 
     case Phase::EastWestGreen:
@@ -86,7 +87,8 @@ void StaticController::updatePhase(
         break;
 
     case Phase::NorthSouthRedYellow:
-        setMainColors(trafficLights, LightColor::RedYellow, LightColor::Red);
+        // Заменено RedYellow на Yellow
+        setMainColors(trafficLights, LightColor::Yellow, LightColor::Red);
         break;
     }
 }

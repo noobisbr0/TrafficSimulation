@@ -177,7 +177,10 @@ void SimulationEngine::updateVehicles(double dt) {
         }
 
         if (vehicle.isTurning()) {
-            bool blockedByPedestrian = false;
+            bool blocked = false;
+            double progress = vehicle.getTurnProgress();
+
+            // 1. Проверка пешеходов
             for (const Pedestrian& ped : m_pedestrians) {
                 if (ped.isWaiting()) continue;
                 Vector2D pPos = ped.getPosition();
@@ -189,13 +192,87 @@ void SimulationEngine::updateVehicles(double dt) {
                     double forwardDist = dir.x * toPed.x + dir.y * toPed.y;
                     if (forwardDist > 0 && forwardDist < 8.0) {
                         double latDist = std::abs(dir.x * toPed.y - dir.y * toPed.x);
-                        if (latDist < 3.0) { blockedByPedestrian = true; break; }
+                        if (latDist < 3.0) { blocked = true; break; }
                     }
                 }
             }
 
-            if (!blockedByPedestrian) MovementLogic::processTurn(vehicle, dt);
-            else { vehicle.setSpeed(0.0); vehicle.setBraking(true); }
+            // 2. Логика просачивания налево (ВСТР)
+            if (!blocked && vehicle.getTurnDirection() == TurnDirection::Left && m_config.permitLeftTurnFilter) {
+                // Машина начинает проверку, выкатившись на 10% (за стоп-линию)
+                if (progress >= 0.10 && progress < 0.8) {
+                    DirectionId myDir = vehicle.getApproachDirection();
+                    DirectionId oncomingDir;
+
+                    if (myDir == DirectionId::North) oncomingDir = DirectionId::South;
+                    else if (myDir == DirectionId::South) oncomingDir = DirectionId::North;
+                    else if (myDir == DirectionId::East) oncomingDir = DirectionId::West;
+                    else oncomingDir = DirectionId::East;
+
+                    // Половинная ширина перекрестка
+                    double hw = (m_config.topology == IntersectionTopology::Lanes_3x3) ? 10.5 : 7.0;
+
+                    for (const Vehicle& other : m_vehicles) {
+                        if (other.getId() == vehicle.getId()) continue;
+
+                        if (other.getApproachDirection() == oncomingDir) {
+                            TurnDirection otherTurn = other.getTurnDirection();
+
+                            // А. Встречные машины, едущие прямо или направо
+                            if (otherTurn == TurnDirection::Straight || otherTurn == TurnDirection::Right) {
+                                Vector2D otherPos = other.getPosition();
+                                double distToCenter = 0.0;
+
+                                if (oncomingDir == DirectionId::North) distToCenter = -otherPos.y;
+                                else if (oncomingDir == DirectionId::South) distToCenter = otherPos.y;
+                                else if (oncomingDir == DirectionId::East) distToCenter = otherPos.x;
+                                else if (oncomingDir == DirectionId::West) distToCenter = -otherPos.x;
+
+                                double speedMs = other.getSpeed() / 3.6;
+
+                                // Условие 1: Встречная машина находится прямо на перекрестке.
+                                // distToCenter > -2.0 означает, что её задний бампер еще не покинул опасную зону
+                                if (distToCenter > -2.0 && distToCenter <= (hw + 2.0)) {
+                                    blocked = true;
+                                    break;
+                                }
+                                // Условие 2: Машина быстро приближается к перекрестку
+                                else if (distToCenter > (hw + 2.0) && distToCenter < 60.0 && speedMs > 1.5) {
+                                    // Считаем время не до центра, а до въезда на перекресток
+                                    double timeToIntersection = (distToCenter - hw) / speedMs;
+                                    if (timeToIntersection < 3.5) {
+                                        blocked = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            // Б. Предотвращение дедлока при встречном левом повороте
+                            else if (otherTurn == TurnDirection::Left && other.isTurning()) {
+                                Vector2D myPos = vehicle.getPosition();
+                                Vector2D theirPos = other.getPosition();
+
+                                // Если машины оказались слишком близко друг к другу в центре
+                                if ((myPos - theirPos).length() < 6.0) {
+                                    double otherProgress = other.getTurnProgress();
+                                    // Разрешаем конфликт: едет тот, у кого прогресс поворота больше (кто начал раньше)
+                                    // Если прогресс одинаковый, уступает тот, у кого ID больше
+                                    if (otherProgress > progress || (otherProgress == progress && other.getId() < vehicle.getId())) {
+                                        blocked = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!blocked) {
+                MovementLogic::processTurn(vehicle, dt);
+            } else {
+                vehicle.setSpeed(0.0);
+                vehicle.setBraking(true);
+            }
             continue;
         }
 

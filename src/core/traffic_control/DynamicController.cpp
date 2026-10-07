@@ -75,13 +75,13 @@ void DynamicController::applyPhase(std::vector<TrafficLight>& trafficLights) con
             if (allRed) trafficLight.setColor(LightColor::Red);
             else if (nsGreen) trafficLight.setColor(LightColor::Green);
             else if (nsYellow) trafficLight.setColor(LightColor::Yellow);
-            else if (nsRedYellow) trafficLight.setColor(LightColor::RedYellow);
+            else if (nsRedYellow) trafficLight.setColor(LightColor::Yellow);
             else trafficLight.setColor(LightColor::Red);
         } else {
             if (allRed) trafficLight.setColor(LightColor::Red);
             else if (ewGreen) trafficLight.setColor(LightColor::Green);
             else if (ewYellow) trafficLight.setColor(LightColor::Yellow);
-            else if (ewRedYellow) trafficLight.setColor(LightColor::RedYellow);
+            else if (ewRedYellow) trafficLight.setColor(LightColor::Yellow);
             else trafficLight.setColor(LightColor::Red);
         }
     }
