@@ -11,6 +11,7 @@
 #include "../entities/Lane.h"
 #include "../entities/TrafficLight.h"
 #include "../traffic_control/StaticController.h"
+#include "../traffic_control/DynamicController.h"
 
 class SimulationEngine : public ISimulationEngine {
 public:
@@ -42,6 +43,7 @@ private:
   Intersection m_intersection;
   TrafficGenerator m_trafficGenerator;
   StaticController m_staticController;
+  DynamicController m_dynamicController;
   std::vector<Vehicle> m_vehicles;
   std::vector<Pedestrian> m_pedestrians;
   std::array<double, 4> m_pedestrianTimeUntilNext;

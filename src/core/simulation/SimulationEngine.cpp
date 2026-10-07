@@ -9,10 +9,12 @@ SimulationEngine::SimulationEngine()
   m_intersection(Vector2D(0.0, 0.0)),
   m_trafficGenerator(&m_intersection),
   m_staticController(),
+  m_dynamicController(),
   m_pedestrianTimeUntilNext{0.0, 0.0, 0.0, 0.0},
   m_nextPedestrianId(1) {
   m_trafficGenerator.setConfig(m_config);
   m_staticController.setConfig(m_config);
+  m_dynamicController.setConfig(m_config);
   initializeIntersection();
 }
 
@@ -106,7 +108,26 @@ void SimulationEngine::initializeIntersection() {
 
 void SimulationEngine::updateTrafficLights(double dt) {
   if (m_config.mode == ControllerMode::Static) {
-    m_staticController.update(dt, m_intersection.getTrafficLights());
+    m_staticController.update(
+        dt,
+        m_intersection.getTrafficLights());
+
+  } else if (m_config.mode == ControllerMode::Dynamic) {
+    m_dynamicController.update(
+        dt,
+        m_intersection.getTrafficLights(),
+        m_vehicles);
+  }
+
+  for (TrafficLight& trafficLight :
+       m_intersection.getTrafficLights()) {
+
+    bool green =
+        trafficLight.getColor() == LightColor::Green;
+
+    trafficLight.setRightArrow(
+        m_config.hasRightTurnArrow,
+        m_config.hasRightTurnArrow && green);
   }
 }
 
@@ -152,12 +173,25 @@ void SimulationEngine::updateVehicles(double dt) {
       if (trafficLight.getDirection() == direction) {
         LightColor color = trafficLight.getColor();
 
-        redOrYellow =
-            color == LightColor::Red ||
-            color == LightColor::Yellow;
-
+        redOrYellow = color == LightColor::Red || color == LightColor::Yellow || color == LightColor::RedYellow;
         break;
       }
+    }
+
+    bool mustWaitForLeftArrow = false;
+
+    if (vehicle.getTurnDirection() == TurnDirection::Left &&
+        !m_config.permitLeftTurnFilter) {
+
+        for (const TrafficLight& trafficLight :
+            m_intersection.getTrafficLights()) {
+
+            if (trafficLight.getDirection() == direction) {
+                mustWaitForLeftArrow =
+                    !trafficLight.isLeftArrowGreen();
+                break;
+            }
+        }
     }
 
     Vector2D currentPosition = vehicle.getPosition();
@@ -211,7 +245,7 @@ void SimulationEngine::updateVehicles(double dt) {
       }
     }
 
-    if (redOrYellow) {
+    if (redOrYellow || mustWaitForLeftArrow) {
 
       double distanceToStopLine = -1.0;
 
@@ -449,6 +483,7 @@ void SimulationEngine::reset() {
   m_nextPedestrianId = 1;
 
   m_staticController.reset();
+  m_dynamicController.reset();
 }
 
 void SimulationEngine::step(double dt) {
@@ -505,6 +540,7 @@ void SimulationEngine::updateConfig(const SimulationConfig& config) {
   m_config = config;
   m_trafficGenerator.setConfig(m_config);
   m_staticController.setConfig(m_config);
+  m_dynamicController.setConfig(m_config);
 
     if (topologyChanged) {
     m_vehicles.clear();
