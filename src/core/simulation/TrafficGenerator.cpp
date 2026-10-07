@@ -98,7 +98,6 @@ bool TrafficGenerator::generateVehicle(DirectionId direction) {
 
     m_nextVehicleId++;
     m_generatedVehicles.push_back(vehicle);
-
     return true;
 }
 
@@ -108,8 +107,6 @@ bool TrafficGenerator::generatePedestrian(int crossingIndex) {
     double halfNS = (m_config.topology == IntersectionTopology::Lanes_3x3) ? 10.5 : 7.0;
     double halfEW = (m_config.topology == IntersectionTopology::Lanes_2x2) ? 7.0 : 10.5;
     const double offset = 1.5;
-
-    // Уменьшенная дистанция, чтобы пешеходы быстрее доходили до экрана
     const double spawnDist = 30.0;
 
     Vector2D position;

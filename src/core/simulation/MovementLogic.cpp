@@ -122,7 +122,6 @@ void MovementLogic::startTurn(Vehicle& vehicle, const Intersection& intersection
     vehicle.setTurnCompleted(false);
     vehicle.setTurnRadius(radius);
 
-    // Замедляем машину для входа в поворот в зависимости от радиуса
     double targetTurnSpeed = std::sqrt(3.0 * radius) * 3.6;
     if (targetTurnSpeed < 15.0) targetTurnSpeed = 15.0;
     if (targetTurnSpeed > 40.0) targetTurnSpeed = 40.0;
@@ -141,12 +140,10 @@ void MovementLogic::processTurn(Vehicle& vehicle, double dt) {
     double currentSpeedMs = vehicle.getSpeed() / 3.6;
     double progress = vehicle.getTurnProgress();
 
-    // Динамическая целевая скорость поворота
     double targetSpeedMs = std::sqrt(3.0 * radius);
     if (targetSpeedMs < 4.0) targetSpeedMs = 4.0;
     if (targetSpeedMs > 11.0) targetSpeedMs = 11.0;
 
-    // Плавный разгон на выходе из поворота (когда пройдено > 50%)
     if (progress > 0.5) {
         targetSpeedMs = vehicle.getDesiredSpeed() / 3.6;
     }
@@ -196,8 +193,6 @@ void MovementLogic::processTurn(Vehicle& vehicle, double dt) {
         vehicle.setTurnCompleted(true);
         vehicle.setBraking(false);
         vehicle.setWaitingInQueue(false);
-
-        // ВЫКЛЮЧЕНИЕ ПОВОРОТНИКА
         vehicle.setTurnDirection(TurnDirection::Straight);
 
         if (vehicle.getTargetLaneId() != -1) {
