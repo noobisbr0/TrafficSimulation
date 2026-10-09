@@ -1,11 +1,10 @@
 #include "Lane.h"
 
-Lane::Lane(int id, const Vector2D& start, const Vector2D& end,
-           double stopLine)
+Lane::Lane(int id, const Vector2D& start, const Vector2D& end, double stopLine)
     : m_id(id),
-      m_start(start),
-      m_end(end),
-      m_stopLine(stopLine) {
+    m_start(start),
+    m_end(end),
+    m_stopLine(stopLine) {
 }
 
 int Lane::getId() const {
@@ -28,7 +27,6 @@ void Lane::addVehicle(Vehicle* vehicle) {
     if (vehicle == nullptr) {
         return;
     }
-
     m_vehicles.push_back(vehicle);
 }
 

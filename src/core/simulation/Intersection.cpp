@@ -10,7 +10,6 @@ Vector2D Intersection::getCenter() const {
 
 void Intersection::addLane(DirectionId direction, const Lane& lane) {
     m_lanes.push_back(lane);
-
     size_t index = m_lanes.size() - 1;
     m_lanesByDirection[direction].push_back(index);
 }
@@ -25,9 +24,7 @@ const std::vector<Lane>& Intersection::getLanes() const {
 
 std::vector<Lane*> Intersection::getLanes(DirectionId direction) const {
     std::vector<Lane*> lanes;
-
     auto it = m_lanesByDirection.find(direction);
-
     if (it == m_lanesByDirection.end()) {
         return lanes;
     }
@@ -35,7 +32,6 @@ std::vector<Lane*> Intersection::getLanes(DirectionId direction) const {
     for (size_t index : it->second) {
         lanes.push_back(const_cast<Lane*>(&m_lanes[index]));
     }
-
     return lanes;
 }
 
