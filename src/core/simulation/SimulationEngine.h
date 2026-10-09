@@ -12,6 +12,7 @@
 #include "../entities/TrafficLight.h"
 #include "../traffic_control/StaticController.h"
 #include "../traffic_control/DynamicController.h"
+#include "../analytics/StatisticsCollector.h"
 
 class SimulationEngine : public ISimulationEngine {
 public:
@@ -33,7 +34,7 @@ private:
     void updatePedestrians(double dt);
     void removePedestriansOutsideScene();
     void updatePedestrianLights(
-        std::vector<PedestrianTrafficLightRenderData>& lights) const;
+    std::vector<PedestrianTrafficLightRenderData>& lights) const;
 
     bool m_isRunning;
     double m_currentTime;
@@ -50,4 +51,5 @@ private:
     int m_nextPedestrianId;
     std::vector<Lane> m_lanes;
     std::vector<TrafficLight> m_trafficLights;
+    StatisticsCollector m_statisticsCollector;
 };

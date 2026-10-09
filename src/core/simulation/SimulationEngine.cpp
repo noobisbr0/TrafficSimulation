@@ -267,6 +267,7 @@ void SimulationEngine::removeVehiclesOutsideScene() {
     for (auto it = m_vehicles.begin(); it != m_vehicles.end(); ) {
         const Vector2D position = it->getPosition();
         if (position.x < -limit || position.x > limit || position.y < -limit || position.y > limit) {
+            m_statisticsCollector.registerPassedVehicles(it->getId());
             it = m_vehicles.erase(it);
         } else {
             ++it;
@@ -412,6 +413,7 @@ void SimulationEngine::reset() {
     m_nextPedestrianId = 1;
     m_staticController.reset();
     m_dynamicController.reset();
+    m_statisticsCollector.reset();
 }
 
 void SimulationEngine::step(double dt) {
@@ -447,8 +449,18 @@ void SimulationEngine::step(double dt) {
 
     updateVehicles(dt);
     updatePedestrians(dt);
+    std::vector<int> waitingVehiclesId;
+    int currentCarsInQueue = 0;
+    for (const Vehicle& vehicle : m_vehicles) {
+    if (vehicle.isWaitingInQueue()) {
+        waitingVehiclesId.push_back(vehicle.getId());
+        currentCarsInQueue++;
+      }
+    }
+    m_statisticsCollector.update(dt, m_currentTime, waitingVehiclesId, currentCarsInQueue);
     removeVehiclesOutsideScene();
     removePedestriansOutsideScene();
+
 }
 
 void SimulationEngine::updateConfig(const SimulationConfig& config) {
@@ -481,6 +493,11 @@ SimulationSnapshot SimulationEngine::getSnapshot() const {
     }
 
     snapshot.stats.currentSimTimeSec = m_currentTime;
+    snapshot.stats.averageWaitTimeSec = m_statisticsCollector.getAverageWaitTimeSec();
+    snapshot.stats.totalCarsPassed = m_statisticsCollector.getTotalCarsPassed();
+
+snapshot.stats.currentCarsInQueue =
+    m_statisticsCollector.getCurrentCarsInQueue();
     for (const Pedestrian& pedestrian : m_pedestrians) {
         PedestrianRenderData renderData;
         renderData.id = pedestrian.getId();
