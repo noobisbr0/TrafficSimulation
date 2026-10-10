@@ -18,10 +18,15 @@ void TrafficLightGraphicsItem::paint(QPainter* painter, const QStyleOptionGraphi
     painter->setBrush(QColor("#111115"));
     painter->drawRoundedRect(QRectF(-1.2, -3.2, 2.4, 6.4), 0.5, 0.5);
 
-    auto drawLens = [&](double x, double y, LightColor color, LightColor activeColor) {
-        bool isActive = (m_data.mainColor == color || m_data.mainColor == LightColor::RedYellow);
-        if (color == LightColor::Yellow && m_data.mainColor == LightColor::Yellow) {
-            isActive = true;
+    auto drawLens = [&](double x, double y, LightColor lensPosition, LightColor activeColor) {
+        bool isActive = false;
+        if (lensPosition == LightColor::Red) {
+            isActive = (m_data.mainColor == LightColor::Red || m_data.mainColor == LightColor::RedYellow);
+        } else if (lensPosition == LightColor::Yellow) {
+            isActive = (m_data.mainColor == LightColor::Yellow || m_data.mainColor == LightColor::RedYellow);
+        } else if (lensPosition == LightColor::Green) {
+            // Зеленый включается исключительно при сигнале Green
+            isActive = (m_data.mainColor == LightColor::Green);
         }
 
         const QColor activeHex = (activeColor == LightColor::Red)    ? QColor("#FF1744") :

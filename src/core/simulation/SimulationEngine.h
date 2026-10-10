@@ -34,7 +34,7 @@ private:
     void updatePedestrians(double dt);
     void removePedestriansOutsideScene();
     void updatePedestrianLights(
-    std::vector<PedestrianTrafficLightRenderData>& lights) const;
+        std::vector<PedestrianTrafficLightRenderData>& lights) const;
 
     bool m_isRunning;
     double m_currentTime;
