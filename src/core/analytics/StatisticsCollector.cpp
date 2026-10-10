@@ -10,6 +10,7 @@ void StatisticsCollector::reset() {
   m_totalCarsPassed = 0;
   m_currentCarsInQueue = 0;
   m_timeSinceLastSample = 0.0;
+  m_totalWaitTimeOfPassedVehicles = 0.0;
   m_queueHistory.clear();
 }
 
