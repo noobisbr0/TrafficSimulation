@@ -158,6 +158,15 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
     addDirection(2, "→ Восток");
     addDirection(3, "← Запад");
 
+    auto syncApproaches = [](ApproachUI& app1, ApproachUI& app2) {
+        QObject::connect(app1.slZ, &QSlider::valueChanged, app2.slZ, &QSlider::setValue);
+        QObject::connect(app2.slZ, &QSlider::valueChanged, app1.slZ, &QSlider::setValue);
+    };
+
+    syncApproaches(m_approaches[0], m_approaches[1]);
+
+    syncApproaches(m_approaches[2], m_approaches[3]);
+
     mainLayout->addWidget(gbApproaches);
 
     m_globalWidget = new QGroupBox("Глобальные параметры");
