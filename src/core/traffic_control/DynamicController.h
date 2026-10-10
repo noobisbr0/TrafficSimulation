@@ -1,7 +1,7 @@
 #pragma once
 
-#include <array>
 #include <vector>
+#include <array>
 
 #include "../../common/SimulationConfig.h"
 #include "../entities/TrafficLight.h"
@@ -25,48 +25,49 @@ public:
     void reset();
 
 private:
-    enum class Phase {
-        GreenNS,
-        YellowNS,
-        RedYellowEW,
-        GreenEW,
-        YellowEW,
-        AllRedPedestrian,
-        RedYellowNS
+    enum class ControllerState {
+        Green,
+        Yellow,
+        AllRed,
+        RedYellow
     };
 
-    static int directionIndex(DirectionId direction);
+    enum class LogicalPhase {
+        NS_Concurrent,
+        EW_Concurrent,
+        North_Split,
+        South_Split,
+        East_Split,
+        West_Split,
+        Pedestrian
+    };
 
-    void updateQueueCounts(
-        const std::vector<Vehicle>& vehicles);
+    struct ApproachData {
+        int queueCars{0};       // Автомобили в заторе (v < 2.0 м/с)
+        int movingCars{0};      // Приближающиеся автомобили
+    };
 
-    void applyPhase(
-        std::vector<TrafficLight>& trafficLights) const;
+    void updateMetrics(const std::vector<Vehicle>& vehicles);
+    double getDistanceToStopLine(DirectionId dir, const Vector2D& pos) const;
 
-    void switchToYellowNS(
-        std::vector<TrafficLight>& trafficLights);
+    bool canSwitchFromGreen() const;
+    LogicalPhase determineNextPhase() const;
 
-    void switchToRedYellowEW(
-        std::vector<TrafficLight>& trafficLights);
-
-    void switchToYellowEW(
-        std::vector<TrafficLight>& trafficLights);
-
-    void switchToAllRedPedestrian(
-        std::vector<TrafficLight>& trafficLights);
-
-    void switchToRedYellowNS(
-        std::vector<TrafficLight>& trafficLights);
-
-    int getCurrentQueue() const;
-    int getOppositeQueue() const;
+    void applyPhaseLights(std::vector<TrafficLight>& trafficLights) const;
 
 private:
     SimulationConfig m_config;
 
-    Phase m_phase;
-    double m_phaseTime;
-    double m_greenDuration;
+    ControllerState m_state;
+    LogicalPhase m_currentPhase;
+    LogicalPhase m_nextPhase;
 
-    std::array<int, 4> m_queueCounts;
+    double m_stateTime;
+    double m_currentGreenTime;
+    double m_timeSinceLastPedPhase;
+
+    // 0: Север (верх), 1: Юг (низ), 2: Восток (право), 3: Запад (лево)
+    std::array<ApproachData, 4> m_approaches;
+    int m_carsInIntersection;
+    int m_totalWaitingQueue;
 };
