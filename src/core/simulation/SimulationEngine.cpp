@@ -1,6 +1,19 @@
 #include "SimulationEngine.h"
 #include "MovementLogic.h"
+#include <algorithm>
 #include <cmath>
+#include <set>
+
+namespace {
+    double axisDistanceAhead(DirectionId dir, const Vector2D& from, const Vector2D& to) {
+        switch (dir) {
+        case DirectionId::North: return from.y - to.y;
+        case DirectionId::South: return to.y - from.y;
+        case DirectionId::East:  return from.x - to.x;
+        default:                 return to.x - from.x;
+        }
+    }
+}
 
 SimulationEngine::SimulationEngine()
     : m_isRunning(false),
@@ -75,9 +88,48 @@ void SimulationEngine::updateTrafficLights(double dt) {
 void SimulationEngine::updateVehicles(double dt) {
     if (dt <= 0.0) return;
 
+    const double hwNS = (m_config.topology == IntersectionTopology::Lanes_3x3) ? 10.5 : 7.0;
+    const double hwEW = (m_config.topology == IntersectionTopology::Lanes_2x2) ? 7.0 : 10.5;
+    const double boxMargin = 1.5;
+
+    auto isVertical = [](DirectionId d) {
+        return d == DirectionId::North || d == DirectionId::South;
+    };
+
+    auto inBox = [&](const Vector2D& p) {
+        return std::abs(p.x) <= hwNS + boxMargin && std::abs(p.y) <= hwEW + boxMargin;
+    };
+
+    auto distToBoxEdge = [&](const Vehicle& v) -> double {
+        const Vector2D p = v.getPosition();
+        const DirectionId d = v.getApproachDirection();
+        if (d == DirectionId::North) return p.y - hwEW;
+        if (d == DirectionId::South) return -p.y - hwEW;
+        if (d == DirectionId::East)  return p.x - hwNS;
+        return -p.x - hwNS;
+    };
+
+    auto mustStopForSignal = [&](const Vehicle& v) -> bool {
+        bool redOrYellow = false;
+        bool leftArrowGreen = false;
+        for (const TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
+            if (trafficLight.getDirection() == v.getApproachDirection()) {
+                const LightColor color = trafficLight.getColor();
+                redOrYellow = (color == LightColor::Red || color == LightColor::Yellow || color == LightColor::RedYellow);
+                leftArrowGreen = trafficLight.isLeftArrowGreen();
+                break;
+            }
+        }
+        bool stop = redOrYellow;
+        if (v.getTurnDirection() == TurnDirection::Left && !m_config.permitLeftTurnFilter) {
+            stop = !leftArrowGreen;
+        }
+        return stop;
+    };
+
     for (Vehicle& vehicle : m_vehicles) {
         DirectionId direction = vehicle.getApproachDirection();
-        double halfRoadWidth = (m_config.topology == IntersectionTopology::Lanes_3x3) ? 10.5 : 7.0;
+        const double halfRoadWidth = isVertical(direction) ? hwEW : hwNS;
         double stopLine = halfRoadWidth + 4.0 + 2.25;
 
         Vector2D currentPosition = vehicle.getPosition();
@@ -88,21 +140,21 @@ void SimulationEngine::updateVehicles(double dt) {
         else if (direction == DirectionId::East) reachedIntersection = currentPosition.x <= halfRoadWidth;
         else if (direction == DirectionId::West) reachedIntersection = currentPosition.x >= -halfRoadWidth;
 
-        bool redOrYellow = false;
-        bool leftArrowGreen = false;
-        for (const TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
-            if (trafficLight.getDirection() == direction) {
-                LightColor color = trafficLight.getColor();
-                redOrYellow = (color == LightColor::Red || color == LightColor::Yellow || color == LightColor::RedYellow);
-                leftArrowGreen = trafficLight.isLeftArrowGreen();
-                break;
-            }
+        double distToIntersection;
+        if (direction == DirectionId::North)      distToIntersection = currentPosition.y - halfRoadWidth;
+        else if (direction == DirectionId::South) distToIntersection = -currentPosition.y - halfRoadWidth;
+        else if (direction == DirectionId::East)  distToIntersection = currentPosition.x - halfRoadWidth;
+        else                                      distToIntersection = -currentPosition.x - halfRoadWidth;
+
+        double speedLimitKmh = 1e9;
+        if (vehicle.getTurnDirection() != TurnDirection::Straight && !vehicle.isTurning() && distToIntersection < 60.0) {
+            speedLimitKmh = 25.0;
         }
 
-        bool stopAtLight = redOrYellow;
-        if (vehicle.getTurnDirection() == TurnDirection::Left && !m_config.permitLeftTurnFilter) {
-            stopAtLight = !leftArrowGreen;
-        }
+        const Vehicle* vehLeader = nullptr;
+        double brakeLimit = 4.5;
+
+        const bool stopAtLight = mustStopForSignal(vehicle);
 
         bool hasLeader = false;
         double nearestGap = 1000000.0;
@@ -122,7 +174,11 @@ void SimulationEngine::updateVehicles(double dt) {
             if (distanceAhead <= 0.0) continue;
             double gap = distanceAhead - 4.5;
             if (gap < nearestGap) {
-                nearestGap = gap; leaderSpeedKmh = other.getSpeed(); hasLeader = true;
+                nearestGap = gap;
+                leaderSpeedKmh = other.getSpeed();
+                hasLeader = true;
+                vehLeader = &other;
+                brakeLimit = 9.0;
             }
         }
 
@@ -144,9 +200,45 @@ void SimulationEngine::updateVehicles(double dt) {
                         double gap = forwardDist - 2.5;
                         if (gap < 0.5) gap = 0.5;
                         if (gap < nearestGap) {
-                            nearestGap = gap; leaderSpeedKmh = 0.0; hasLeader = true;
+                            nearestGap = gap;
+                            leaderSpeedKmh = 0.0;
+                            hasLeader = true;
+                            brakeLimit = 9.0;
                         }
                     }
+                }
+            }
+        }
+
+        if (distToIntersection > 0.0 && distToIntersection < 80.0) {
+            bool boxBusy = false;
+            for (const Vehicle& other : m_vehicles) {
+                if (other.getId() == vehicle.getId()) continue;
+                if (isVertical(other.getApproachDirection()) == isVertical(direction)) continue;
+
+                if (inBox(other.getPosition())) { boxBusy = true; break; }
+
+                const double otherSpeedMs = other.getSpeed() / 3.6;
+                if (otherSpeedMs < 1.0) continue;
+                const double dOther = distToBoxEdge(other);
+                if (dOther <= 0.0) continue;
+                if (dOther / otherSpeedMs > 3.0) continue;
+
+                const bool willStop = mustStopForSignal(other) &&
+                                      (otherSpeedMs * otherSpeedMs / (2.0 * 4.5)) <= (dOther - 2.5);
+                if (willStop) continue;
+
+                boxBusy = true;
+                break;
+            }
+
+            if (boxBusy) {
+                const double wallGap = distToIntersection - 2.75;
+                if (wallGap < nearestGap) {
+                    nearestGap = wallGap;
+                    leaderSpeedKmh = 0.0;
+                    hasLeader = true;
+                    brakeLimit = 9.0;
                 }
             }
         }
@@ -159,11 +251,15 @@ void SimulationEngine::updateVehicles(double dt) {
             else if (direction == DirectionId::West) distanceToStopLine = -currentPosition.x - stopLine;
 
             if (distanceToStopLine > 0.0 && distanceToStopLine <= m_config.visibilityDistance && distanceToStopLine < nearestGap) {
-                nearestGap = distanceToStopLine; leaderSpeedKmh = 0.0; hasLeader = true;
+                nearestGap = distanceToStopLine;
+                leaderSpeedKmh = 0.0;
+                hasLeader = true;
+                brakeLimit = 4.5;
             }
         }
 
-        double acceleration = MovementLogic::calculateIDMAcceleration(vehicle, nearestGap, leaderSpeedKmh);
+        double acceleration = MovementLogic::calculateIDMAcceleration(
+            vehicle, nearestGap, leaderSpeedKmh, brakeLimit, speedLimitKmh);
         vehicle.setAcceleration(acceleration);
         vehicle.setBraking(acceleration < -0.5);
         vehicle.setWaitingInQueue(vehicle.getSpeed() < 0.5 && hasLeader);
@@ -203,7 +299,7 @@ void SimulationEngine::updateVehicles(double dt) {
                     else if (myDir == DirectionId::East) oncomingDir = DirectionId::West;
                     else oncomingDir = DirectionId::East;
 
-                    double hw = (m_config.topology == IntersectionTopology::Lanes_3x3) ? 10.5 : 7.0;
+                    double hw = isVertical(oncomingDir) ? hwEW : hwNS;
 
                     for (const Vehicle& other : m_vehicles) {
                         if (other.getId() == vehicle.getId()) continue;
@@ -250,15 +346,25 @@ void SimulationEngine::updateVehicles(double dt) {
             }
 
             if (!blocked) {
-                MovementLogic::processTurn(vehicle, dt);
+                MovementLogic::processTurn(vehicle, dt, acceleration);
             } else {
-                vehicle.setSpeed(0.0);
+                vehicle.setSpeed(std::max(0.0, vehicle.getSpeed() - 4.5 * 3.6 * dt));
                 vehicle.setBraking(true);
             }
             continue;
         }
 
         MovementLogic::moveVehicle(vehicle, dt);
+
+        if (vehLeader) {
+            const double minCenterDist = 4.5 + 0.3;
+            const double ahead = axisDistanceAhead(direction, vehicle.getPosition(), vehLeader->getPosition());
+            if (ahead > 0.0 && ahead < minCenterDist) {
+                const double rad = vehicle.getAngleDeg() * 3.14159265358979323846 / 180.0;
+                vehicle.setPosition(vehicle.getPosition() - Vector2D(std::cos(rad), std::sin(rad)) * (minCenterDist - ahead));
+                vehicle.setSpeed(std::min(vehicle.getSpeed(), vehLeader->getSpeed()));
+            }
+        }
     }
 }
 
@@ -376,23 +482,23 @@ void SimulationEngine::updatePedestrianLights(std::vector<PedestrianTrafficLight
 
     const std::array<Vector2D, 4> positions = {
         Vector2D(-8.5, -8.5), Vector2D(8.5, -8.5), Vector2D(8.5, 8.5), Vector2D(-8.5, 8.5)
-};
+    };
 
-for (int i = 0; i < 4; ++i) {
-    PedestrianTrafficLightRenderData light;
-    light.id = i + 1;
-    light.position = positions[i];
-    light.corner = i;
+    for (int i = 0; i < 4; ++i) {
+        PedestrianTrafficLightRenderData light;
+        light.id = i + 1;
+        light.position = positions[i];
+        light.corner = i;
 
-    if (parallelAllowed) {
-        light.signalNS = (eastRed && westRed) ? PedestrianLightSignal::Green : PedestrianLightSignal::Red;
-        light.signalEW = (northRed && southRed) ? PedestrianLightSignal::Green : PedestrianLightSignal::Red;
-    } else {
-        light.signalNS = allRed ? PedestrianLightSignal::Green : PedestrianLightSignal::Red;
-        light.signalEW = allRed ? PedestrianLightSignal::Green : PedestrianLightSignal::Red;
+        if (parallelAllowed) {
+            light.signalNS = (eastRed && westRed) ? PedestrianLightSignal::Green : PedestrianLightSignal::Red;
+            light.signalEW = (northRed && southRed) ? PedestrianLightSignal::Green : PedestrianLightSignal::Red;
+        } else {
+            light.signalNS = allRed ? PedestrianLightSignal::Green : PedestrianLightSignal::Red;
+            light.signalEW = allRed ? PedestrianLightSignal::Green : PedestrianLightSignal::Red;
+        }
+        lights.push_back(light);
     }
-    lights.push_back(light);
-}
 }
 
 void SimulationEngine::start() {
@@ -408,6 +514,7 @@ void SimulationEngine::reset() {
     m_currentTime = 0.0;
     m_trafficLightPhaseTime = 0.0;
     m_vehicles.clear();
+    m_pendingSpawns.clear();
     m_pedestrians.clear();
     m_pedestrianTimeUntilNext = {0.0, 0.0, 0.0, 0.0};
     m_nextPedestrianId = 1;
@@ -423,22 +530,44 @@ void SimulationEngine::step(double dt) {
     m_trafficGenerator.update(dt);
     updateTrafficLights(dt);
 
-    std::vector<Vehicle> generatedVehicles = m_trafficGenerator.takeGeneratedVehicles();
-    for (Vehicle& vehicle : generatedVehicles) {
+    std::vector<Vehicle> generated = m_trafficGenerator.takeGeneratedVehicles();
+    for (Vehicle& v : generated) {
+        if (m_pendingSpawns.size() < 100) m_pendingSpawns.push_back(v);
+    }
+
+    std::set<int> blockedLanes;
+    for (auto it = m_pendingSpawns.begin(); it != m_pendingSpawns.end();) {
+        Vehicle& v = *it;
+        if (blockedLanes.count(v.getLaneId())) { ++it; continue; }
+
+        const Vehicle* nearest = nullptr;
+        double minDist = 1e9;
+        for (const Vehicle& other : m_vehicles) {
+            if (other.getApproachDirection() != v.getApproachDirection() ||
+                other.getLaneId() != v.getLaneId()) continue;
+            double d = (other.getPosition() - v.getPosition()).length();
+            if (d < minDist) { minDist = d; nearest = &other; }
+        }
+
         bool canSpawn = true;
-        for (const Vehicle& existingVehicle : m_vehicles) {
-            if (vehicle.getApproachDirection() != existingVehicle.getApproachDirection() ||
-                vehicle.getLaneId() != existingVehicle.getLaneId()) {
-                continue;
-            }
-            Vector2D difference = vehicle.getPosition() - existingVehicle.getPosition();
-            if (difference.length() < 8.0) {
+        if (nearest) {
+            const double gap = minDist - 4.5;
+            const double leadMs = nearest->getSpeed() / 3.6;
+            const double b = 3.0, s0 = 2.0;
+            if (gap < s0 + 1.5) {
                 canSpawn = false;
-                break;
+            } else {
+                double vSafeMs = std::sqrt(leadMs * leadMs + 2.0 * b * (gap - s0));
+                v.setSpeed(std::min(v.getSpeed(), vSafeMs * 3.6));
             }
         }
+
         if (canSpawn) {
-            m_vehicles.push_back(vehicle);
+            m_vehicles.push_back(v);
+            it = m_pendingSpawns.erase(it);
+        } else {
+            blockedLanes.insert(v.getLaneId());
+            ++it;
         }
     }
 
@@ -449,18 +578,18 @@ void SimulationEngine::step(double dt) {
 
     updateVehicles(dt);
     updatePedestrians(dt);
+
     std::vector<int> waitingVehiclesId;
     int currentCarsInQueue = 0;
     for (const Vehicle& vehicle : m_vehicles) {
-    if (vehicle.isWaitingInQueue()) {
-        waitingVehiclesId.push_back(vehicle.getId());
-        currentCarsInQueue++;
-      }
+        if (vehicle.isWaitingInQueue()) {
+            waitingVehiclesId.push_back(vehicle.getId());
+            currentCarsInQueue++;
+        }
     }
     m_statisticsCollector.update(dt, m_currentTime, waitingVehiclesId, currentCarsInQueue);
     removeVehiclesOutsideScene();
     removePedestriansOutsideScene();
-
 }
 
 void SimulationEngine::updateConfig(const SimulationConfig& config) {
@@ -472,6 +601,7 @@ void SimulationEngine::updateConfig(const SimulationConfig& config) {
 
     if (topologyChanged) {
         m_vehicles.clear();
+        m_pendingSpawns.clear();
         m_pedestrians.clear();
         m_intersection = Intersection(Vector2D(0.0, 0.0));
         initializeIntersection();
@@ -495,9 +625,8 @@ SimulationSnapshot SimulationEngine::getSnapshot() const {
     snapshot.stats.currentSimTimeSec = m_currentTime;
     snapshot.stats.averageWaitTimeSec = m_statisticsCollector.getAverageWaitTimeSec();
     snapshot.stats.totalCarsPassed = m_statisticsCollector.getTotalCarsPassed();
+    snapshot.stats.currentCarsInQueue = m_statisticsCollector.getCurrentCarsInQueue();
 
-snapshot.stats.currentCarsInQueue =
-    m_statisticsCollector.getCurrentCarsInQueue();
     for (const Pedestrian& pedestrian : m_pedestrians) {
         PedestrianRenderData renderData;
         renderData.id = pedestrian.getId();

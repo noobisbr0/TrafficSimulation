@@ -34,7 +34,7 @@ private:
     void updatePedestrians(double dt);
     void removePedestriansOutsideScene();
     void updatePedestrianLights(
-    std::vector<PedestrianTrafficLightRenderData>& lights) const;
+        std::vector<PedestrianTrafficLightRenderData>& lights) const;
 
     bool m_isRunning;
     double m_currentTime;
@@ -46,6 +46,7 @@ private:
     StaticController m_staticController;
     DynamicController m_dynamicController;
     std::vector<Vehicle> m_vehicles;
+    std::vector<Vehicle> m_pendingSpawns;
     std::vector<Pedestrian> m_pedestrians;
     std::array<double, 4> m_pedestrianTimeUntilNext;
     int m_nextPedestrianId;

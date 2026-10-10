@@ -3,24 +3,30 @@
 #include <cmath>
 #include <algorithm>
 
-double MovementLogic::calculateIDMAcceleration(const Vehicle& vehicle, double gap, double leadSpeedKmh) {
+double MovementLogic::calculateIDMAcceleration(
+    const Vehicle& vehicle,
+    double gap,
+    double leadSpeedKmh,
+    double maxBrake,
+    double speedLimitKmh) {
     const double aMax = 1.5;
     const double comfortableDeceleration = 2.0;
     const double minimumGap = 2.0;
     const double timeHeadway = 1.2;
 
     double speed = vehicle.getSpeed() / 3.6;
-    double desiredSpeed = vehicle.getDesiredSpeed() / 3.6;
+    double desiredSpeed = std::min(vehicle.getDesiredSpeed(), speedLimitKmh) / 3.6;
     double leadSpeed = leadSpeedKmh / 3.6;
 
     if (desiredSpeed < 1.0) desiredSpeed = 1.0;
     if (gap < 0.5) gap = 0.5;
 
     double deltaSpeed = speed - leadSpeed;
-    double desiredGap = minimumGap + speed * timeHeadway + (speed * deltaSpeed) / (2.0 * std::sqrt(aMax * comfortableDeceleration));
+    double dyn = speed * timeHeadway + (speed * deltaSpeed) / (2.0 * std::sqrt(aMax * comfortableDeceleration));
+    double desiredGap = minimumGap + std::max(0.0, dyn);
     double acceleration = aMax * (1.0 - std::pow(speed / desiredSpeed, 4.0) - std::pow(desiredGap / gap, 2.0));
 
-    if (acceleration < -4.5) acceleration = -4.5;
+    if (acceleration < -maxBrake) acceleration = -maxBrake;
     if (acceleration > aMax) acceleration = aMax;
 
     return acceleration;
@@ -121,17 +127,9 @@ void MovementLogic::startTurn(Vehicle& vehicle, const Intersection& intersection
     vehicle.setTurning(true);
     vehicle.setTurnCompleted(false);
     vehicle.setTurnRadius(radius);
-
-    double targetTurnSpeed = std::sqrt(3.0 * radius) * 3.6;
-    if (targetTurnSpeed < 15.0) targetTurnSpeed = 15.0;
-    if (targetTurnSpeed > 40.0) targetTurnSpeed = 40.0;
-
-    if (vehicle.getSpeed() > targetTurnSpeed) {
-        vehicle.setSpeed(targetTurnSpeed);
-    }
 }
 
-void MovementLogic::processTurn(Vehicle& vehicle, double dt) {
+void MovementLogic::processTurn(Vehicle& vehicle, double dt, double idmAcceleration) {
     if (!vehicle.isTurning() || dt <= 0.0) return;
 
     double radius = vehicle.getTurnRadius();
@@ -148,15 +146,11 @@ void MovementLogic::processTurn(Vehicle& vehicle, double dt) {
         targetSpeedMs = vehicle.getDesiredSpeed() / 3.6;
     }
 
-    if (currentSpeedMs < targetSpeedMs) {
-        currentSpeedMs += 1.5 * dt;
-        if (currentSpeedMs > targetSpeedMs) currentSpeedMs = targetSpeedMs;
-    } else if (currentSpeedMs > targetSpeedMs) {
-        currentSpeedMs -= 2.0 * dt;
-        if (currentSpeedMs < targetSpeedMs) currentSpeedMs = targetSpeedMs;
-    }
-
-    if (currentSpeedMs < 1.0) currentSpeedMs = 1.0;
+    double v = currentSpeedMs;
+    if (v < targetSpeedMs)      v = std::min(targetSpeedMs, v + 1.5 * dt);
+    else if (v > targetSpeedMs) v = std::max(targetSpeedMs, v - 2.0 * dt);
+    if (idmAcceleration < 0.0)  v = std::min(v, std::max(0.0, currentSpeedMs + idmAcceleration * dt));
+    currentSpeedMs = v;
 
     double angularSpeed = currentSpeedMs / radius;
     progress += angularSpeed * dt / (pi / 2.0);
