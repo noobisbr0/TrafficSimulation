@@ -54,7 +54,7 @@ QWidget* ParametersPanel::createApproachTab(ApproachUI& uiElements) {
     l->setVerticalSpacing(2);
     l->setHorizontalSpacing(6);
 
-    addSliderRow(l, "Поток (авт/ч):", 100, 2000, 600, uiElements.slP, uiElements.sbP);
+    addSliderRow(l, "Поток (авт/ч):", 100, 1000, 400, uiElements.slP, uiElements.sbP);
     addSliderRow(l, "Зеленый (с):", 5, 180, 30, uiElements.slZ, uiElements.sbZ);
     addSliderRow(l, "Красный (с):", 5, 180, 60, uiElements.slK, uiElements.sbK);
 
@@ -153,8 +153,8 @@ ParametersPanel::ParametersPanel(QWidget* parent) : QWidget(parent) {
         lApproaches->addWidget(createApproachTab(m_approaches[index]));
     };
 
-    addDirection(0, "↑ Север");
-    addDirection(1, "↓ Юг");
+    addDirection(0, "↓ Юг");
+    addDirection(1, "↑ Север");
     addDirection(2, "→ Восток");
     addDirection(3, "← Запад");
 
