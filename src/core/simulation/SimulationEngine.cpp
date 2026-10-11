@@ -312,15 +312,19 @@ void SimulationEngine::updatePedestrians(double dt) {
 
     bool northRed = false, southRed = false, eastRed = false, westRed = false;
     for (const TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
-        const bool red = trafficLight.getColor() == LightColor::Red;
+        // Направление закрыто, только если красный основной И выключены стрелки
+        bool red = (trafficLight.getColor() == LightColor::Red)
+                   && !trafficLight.isLeftArrowGreen()
+                   && !trafficLight.isRightArrowGreen();
+
         if (trafficLight.getDirection() == DirectionId::North) northRed = red;
         else if (trafficLight.getDirection() == DirectionId::South) southRed = red;
         else if (trafficLight.getDirection() == DirectionId::East) eastRed = red;
         else if (trafficLight.getDirection() == DirectionId::West) westRed = red;
     }
 
-    const bool allRed = northRed && southRed && eastRed && westRed;
-    const bool parallelAllowed = m_config.hasRightTurnArrow;
+    bool allRed = northRed && southRed && eastRed && westRed;
+    bool parallelAllowed = m_config.hasRightTurnArrow;
 
     for (Pedestrian& pedestrian : m_pedestrians) {
         bool canCross = false;
@@ -391,20 +395,25 @@ void SimulationEngine::removePedestriansOutsideScene() {
     }
 }
 
+
 void SimulationEngine::updatePedestrianLights(std::vector<PedestrianTrafficLightRenderData>& lights) const {
     lights.clear();
     bool northRed = false, southRed = false, eastRed = false, westRed = false;
 
     for (const TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
-        const bool red = trafficLight.getColor() == LightColor::Red;
+        // Аналогично учитываем стрелки при формировании сигналов пешеходных светофоров
+        bool red = (trafficLight.getColor() == LightColor::Red)
+                   && !trafficLight.isLeftArrowGreen()
+                   && !trafficLight.isRightArrowGreen();
+
         if (trafficLight.getDirection() == DirectionId::North) northRed = red;
         else if (trafficLight.getDirection() == DirectionId::South) southRed = red;
         else if (trafficLight.getDirection() == DirectionId::East) eastRed = red;
         else if (trafficLight.getDirection() == DirectionId::West) westRed = red;
     }
 
-    const bool allRed = northRed && southRed && eastRed && westRed;
-    const bool parallelAllowed = m_config.hasRightTurnArrow;
+    bool allRed = northRed && southRed && eastRed && westRed;
+    bool parallelAllowed = m_config.hasRightTurnArrow;
 
     const std::array<Vector2D, 4> positions = {
         Vector2D(-8.5, -8.5), Vector2D(8.5, -8.5), Vector2D(8.5, 8.5), Vector2D(-8.5, 8.5)

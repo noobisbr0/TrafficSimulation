@@ -101,9 +101,14 @@ void StaticController::update(
 
     m_phaseTime += dt;
 
-    double greenTime = static_cast<double>(m_config.north.greenZ);
-    if (greenTime <= 0.0) {
-        greenTime = 30.0;
+    double nsGreenTime = static_cast<double>(m_config.north.greenZ);
+    if (nsGreenTime <= 0.0) {
+        nsGreenTime = 30.0;
+    }
+
+    double ewGreenTime = static_cast<double>(m_config.east.greenZ);
+    if (ewGreenTime <= 0.0) {
+        ewGreenTime = nsGreenTime;
     }
 
     constexpr double yellowTime = 3.0;
@@ -112,28 +117,25 @@ void StaticController::update(
 
     switch (m_phase) {
     case Phase::NorthSouthGreen:
-        phaseDuration = greenTime;
+        phaseDuration = nsGreenTime;
         break;
     case Phase::NorthSouthYellow:
         phaseDuration = yellowTime;
         break;
     case Phase::NorthSouthLeftArrow:
-        phaseDuration = 5.0;
+        phaseDuration = 0.45 * nsGreenTime;
         break;
     case Phase::EastWestRedYellow:
         phaseDuration = redYellowTime;
         break;
     case Phase::EastWestGreen:
-        phaseDuration = static_cast<double>(m_config.east.greenZ);
-        if (phaseDuration <= 0.0) {
-            phaseDuration = greenTime;
-        }
+        phaseDuration = ewGreenTime;
         break;
     case Phase::EastWestYellow:
         phaseDuration = yellowTime;
         break;
     case Phase::EastWestLeftArrow:
-        phaseDuration = 5.0;
+        phaseDuration = 0.45 * ewGreenTime;
         break;
     case Phase::AllRedPedestrian:
         phaseDuration = m_config.pedestrianGreenSec;
