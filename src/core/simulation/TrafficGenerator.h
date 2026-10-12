@@ -19,6 +19,7 @@ public:
     std::vector<Vehicle> takeGeneratedVehicles();
     std::vector<Pedestrian> takeGeneratedPedestrians();
 
+    void setSeed(unsigned int seed) { m_random.seed(seed); }
 private:
     int directionIndex(DirectionId direction) const;
     double getFlow(DirectionId direction) const;

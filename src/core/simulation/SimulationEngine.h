@@ -25,7 +25,7 @@ public:
     void updateConfig(const SimulationConfig& config) override;
 
     [[nodiscard]] SimulationSnapshot getSnapshot() const override;
-
+    void setRandomSeed(unsigned int seed) { m_trafficGenerator.setSeed(seed); }
 private:
     void initializeIntersection();
     void updateTrafficLights(double dt);
