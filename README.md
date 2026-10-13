@@ -372,3 +372,6 @@ cmake --build build
 * **Морозова А.**
 
 Репозиторий проекта на GitHub: [https://github.com/noobisbr0/TrafficSimulation](https://github.com/noobisbr0/TrafficSimulation)
+
+P.S. для тех, кому приятнее смотреть на XLSX, а не CSV, я написал маленькую утилиту на Rust для конвертации:
+https://github.com/noobisbr0/csv2xlsx
