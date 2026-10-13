@@ -14,7 +14,6 @@ public:
 private:
     QPushButton* m_btnStart{nullptr};
     QPushButton* m_btnPause{nullptr};
-    QPushButton* m_btnStep{nullptr};
     QPushButton* m_btnReset{nullptr};
     QDoubleSpinBox* m_sbSpeed{nullptr};
 };

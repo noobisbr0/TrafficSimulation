@@ -20,11 +20,6 @@ ControlPanel::ControlPanel(SimulationPresenter* presenter, QWidget* parent) : QW
     m_btnPause->setToolTip("Пауза");
     m_btnPause->setObjectName("btnGroupMiddle");
 
-    m_btnStep = new QPushButton(this);
-    m_btnStep->setIcon(QIcon(":/icons/step_forward.svg"));
-    m_btnStep->setToolTip("Шаг");
-    m_btnStep->setObjectName("btnGroupMiddle");
-
     m_btnReset = new QPushButton(this);
     m_btnReset->setIcon(QIcon(":/icons/stop.svg"));
     m_btnReset->setToolTip("Сброс");
@@ -39,7 +34,6 @@ ControlPanel::ControlPanel(SimulationPresenter* presenter, QWidget* parent) : QW
     layout->addStretch();
     layout->addWidget(m_btnStart);
     layout->addWidget(m_btnPause);
-    layout->addWidget(m_btnStep);
     layout->addWidget(m_btnReset);
 
     auto* rightLayout = new QHBoxLayout();
@@ -50,7 +44,6 @@ ControlPanel::ControlPanel(SimulationPresenter* presenter, QWidget* parent) : QW
 
     connect(m_btnStart, &QPushButton::clicked, presenter, &SimulationPresenter::onStartClicked);
     connect(m_btnPause, &QPushButton::clicked, presenter, &SimulationPresenter::onPauseClicked);
-    connect(m_btnStep,  &QPushButton::clicked, presenter, &SimulationPresenter::onStepClicked);
     connect(m_btnReset, &QPushButton::clicked, presenter, &SimulationPresenter::onResetClicked);
     connect(m_sbSpeed, &QDoubleSpinBox::valueChanged, presenter, &SimulationPresenter::onSimulationSpeedMultiplierChanged);
 }
