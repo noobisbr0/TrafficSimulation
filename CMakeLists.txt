@@ -58,3 +58,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     TrafficCore
     Qt${QT_VERSION_MAJOR}::Widgets
 )
+
+add_executable(experiment_runner tools/experiment_runner.cpp)
+target_link_libraries(experiment_runner PRIVATE TrafficCore Qt${QT_VERSION_MAJOR}::Core)

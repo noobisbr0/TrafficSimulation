@@ -5,7 +5,7 @@
 #include "panels/ParametersPanel.h"
 #include "panels/StatsPanel.h"
 #include "presenter/SimulationPresenter.h"
-#include "common/MockSimulationEngine.h"
+#include "core/simulation/SimulationEngine.h"
 
 #include <QVBoxLayout>
 #include <QDockWidget>
@@ -16,7 +16,7 @@ MainWindow::MainWindow(QWidget* parent)
     setWindowTitle("Симулятор перекрестка");
     resize(1280, 720);
 
-    auto engine = std::make_shared<MockSimulationEngine>();
+    auto engine = std::make_shared<SimulationEngine>();
     m_presenter = new SimulationPresenter(engine, this);
 
     auto* scene = new SimulationScene(this);
