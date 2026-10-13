@@ -1,9 +1,9 @@
 #pragma once
 
 #include <QWidget>
-#include <QPushButton>
-#include <QComboBox>
 
+class QPushButton;
+class QDoubleSpinBox;
 class SimulationPresenter;
 
 class ControlPanel : public QWidget {
@@ -16,5 +16,5 @@ private:
     QPushButton* m_btnPause{nullptr};
     QPushButton* m_btnStep{nullptr};
     QPushButton* m_btnReset{nullptr};
-    QComboBox* m_cbSpeed{nullptr};
+    QDoubleSpinBox* m_sbSpeed{nullptr};
 };

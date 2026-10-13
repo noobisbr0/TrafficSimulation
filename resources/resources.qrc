@@ -2,5 +2,13 @@
 <RCC version="1.0">
     <qresource prefix="/">
         <file>styles/style.qss</file>
+        <file>icons/play.svg</file>
+        <file>icons/pause.svg</file>
+        <file>icons/step_forward.svg</file>
+        <file>icons/stop.svg</file>
+        <file>icons/arrow_up.svg</file>
+        <file>icons/arrow_down.svg</file>
+        <file>icons/arrow_right.svg</file>
+        <file>icons/arrow_left.svg</file>
     </qresource>
 </RCC>
