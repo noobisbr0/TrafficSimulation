@@ -48,19 +48,19 @@ void PedestrianTrafficLightGraphicsItem::paint(QPainter* painter, const QStyleOp
     static constexpr BoxOffsetPair kOffsets[4] = {
         { { 1.0, -2.0}, {-2.0,  1.0} },
         { {-1.0, -2.0}, { 2.0,  1.0} },
-        { { 1.0,  2.0}, {-2.0, -1.0} },
-        { {-1.0,  2.0}, { 2.0, -1.0} }
+        { {-1.0,  2.0}, { 2.0, -1.0} },
+        { { 1.0,  2.0}, {-2.0, -1.0} }
     };
 
     const int c = m_data.corner;
     const auto [hBox, vBox] = (c >= 0 && c < 4) ? kOffsets[c] : kOffsets[0];
 
-    painter->setPen(QPen(QColor("#252836"), 0.3, Qt::SolidLine, Qt::RoundCap));
+    painter->setPen(QPen(QColor("#5C667A"), 0.3, Qt::SolidLine, Qt::RoundCap));
     painter->drawLine(QPointF(0, 0), hBox);
     painter->drawLine(QPointF(0, 0), vBox);
 
     painter->setPen(Qt::NoPen);
-    painter->setBrush(QColor("#3A3F55"));
+    painter->setBrush(QColor("#5C667A"));
     painter->drawEllipse(QPointF(0, 0), 0.4, 0.4);
 
     drawBox(hBox.x(), hBox.y(), true, m_data.signalEW);
