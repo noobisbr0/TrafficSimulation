@@ -76,20 +76,23 @@ void SimulationEngine::updateTrafficLights(double dt) {
 void SimulationEngine::updateVehicles(double dt) {
     if (dt <= 0.0) return;
 
+    const double hw_NS = (m_config.topology == IntersectionTopology::Lanes_3x3) ? 10.5 : 7.0;
+    const double hw_EW = (m_config.topology == IntersectionTopology::Lanes_2x2) ? 7.0 : 10.5;
+
     for (Vehicle& vehicle : m_vehicles) {
         const DirectionId direction = vehicle.getApproachDirection();
-        const double halfRoadWidth = (m_config.topology == IntersectionTopology::Lanes_3x3) ? 10.5 : 7.0;
-        const double stopLine = halfRoadWidth + 4.0 + 2.25;
+
+        const double currentHalfRoadWidth = (direction == DirectionId::North || direction == DirectionId::South) ? hw_EW : hw_NS;
+        const double stopLine = currentHalfRoadWidth + 4.0 + 2.25;
 
         const Vector2D currentPosition = vehicle.getPosition();
         bool reachedIntersection = false;
 
-        if (direction == DirectionId::North) reachedIntersection = currentPosition.y <= halfRoadWidth;
-        else if (direction == DirectionId::South) reachedIntersection = currentPosition.y >= -halfRoadWidth;
-        else if (direction == DirectionId::East) reachedIntersection = currentPosition.x <= halfRoadWidth;
-        else if (direction == DirectionId::West) reachedIntersection = currentPosition.x >= -halfRoadWidth;
+        if (direction == DirectionId::North) reachedIntersection = currentPosition.y <= currentHalfRoadWidth;
+        else if (direction == DirectionId::South) reachedIntersection = currentPosition.y >= -currentHalfRoadWidth;
+        else if (direction == DirectionId::East) reachedIntersection = currentPosition.x <= currentHalfRoadWidth;
+        else if (direction == DirectionId::West) reachedIntersection = currentPosition.x >= -currentHalfRoadWidth;
 
-        // Связываем реальный физический подход со светофором перед капотом
         DirectionId controllingLightDir = direction;
         if (direction == DirectionId::North) controllingLightDir = DirectionId::South;
         else if (direction == DirectionId::South) controllingLightDir = DirectionId::North;
@@ -177,7 +180,6 @@ void SimulationEngine::updateVehicles(double dt) {
             }
         }
 
-        // Физический барьер безопасности: машины ни при каких условиях не наезжают друг на друга
         if (hasLeader && nearestGap <= 2.0) {
             vehicle.setSpeed(0.0);
             vehicle.setAcceleration(-4.5);
@@ -226,7 +228,7 @@ void SimulationEngine::updateVehicles(double dt) {
                     else if (myDir == DirectionId::East) oncomingDir = DirectionId::West;
                     else oncomingDir = DirectionId::East;
 
-                    const double hw = (m_config.topology == IntersectionTopology::Lanes_3x3) ? 10.5 : 7.0;
+                    const double hw = currentHalfRoadWidth;
 
                     for (const Vehicle& other : m_vehicles) {
                         if (other.getId() == vehicle.getId()) continue;
@@ -292,7 +294,6 @@ void SimulationEngine::removeVehiclesOutsideScene() {
         const DirectionId dir = it->getApproachDirection();
         bool isLeaving = false;
 
-        // Удаляем только машины, пересекшие перекресток и покидающие сцену
         if (dir == DirectionId::North && pos.y < -limit) isLeaving = true;
         else if (dir == DirectionId::South && pos.y > limit) isLeaving = true;
         else if (dir == DirectionId::East && pos.x < -limit) isLeaving = true;
@@ -311,11 +312,16 @@ void SimulationEngine::updatePedestrians(double dt) {
     if (dt <= 0.0) return;
 
     bool northRed = false, southRed = false, eastRed = false, westRed = false;
+    bool anyLeftArrowGreen = false;
+
     for (const TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
-        // Направление закрыто, только если красный основной И выключены стрелки
         bool red = (trafficLight.getColor() == LightColor::Red)
-                   && !trafficLight.isLeftArrowGreen()
-                   && !trafficLight.isRightArrowGreen();
+        && !trafficLight.isLeftArrowGreen()
+            && !trafficLight.isRightArrowGreen();
+
+        if (trafficLight.isLeftArrowGreen()) {
+            anyLeftArrowGreen = true;
+        }
 
         if (trafficLight.getDirection() == DirectionId::North) northRed = red;
         else if (trafficLight.getDirection() == DirectionId::South) southRed = red;
@@ -333,6 +339,8 @@ void SimulationEngine::updatePedestrians(double dt) {
         if (parallelAllowed) {
             if (crossing == DirectionId::North || crossing == DirectionId::South) canCross = northRed && southRed;
             else canCross = eastRed && westRed;
+
+            if (anyLeftArrowGreen) canCross = false;
         } else {
             canCross = allRed;
         }
@@ -395,16 +403,19 @@ void SimulationEngine::removePedestriansOutsideScene() {
     }
 }
 
-
 void SimulationEngine::updatePedestrianLights(std::vector<PedestrianTrafficLightRenderData>& lights) const {
     lights.clear();
     bool northRed = false, southRed = false, eastRed = false, westRed = false;
+    bool anyLeftArrowGreen = false;
 
     for (const TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
-        // Аналогично учитываем стрелки при формировании сигналов пешеходных светофоров
         bool red = (trafficLight.getColor() == LightColor::Red)
-                   && !trafficLight.isLeftArrowGreen()
-                   && !trafficLight.isRightArrowGreen();
+        && !trafficLight.isLeftArrowGreen()
+            && !trafficLight.isRightArrowGreen();
+
+        if (trafficLight.isLeftArrowGreen()) {
+            anyLeftArrowGreen = true;
+        }
 
         if (trafficLight.getDirection() == DirectionId::North) northRed = red;
         else if (trafficLight.getDirection() == DirectionId::South) southRed = red;
@@ -415,25 +426,32 @@ void SimulationEngine::updatePedestrianLights(std::vector<PedestrianTrafficLight
     bool allRed = northRed && southRed && eastRed && westRed;
     bool parallelAllowed = m_config.hasRightTurnArrow;
 
+    const double halfNS = (m_config.topology == IntersectionTopology::Lanes_3x3) ? 10.5 : 7.0;
+    const double halfEW = (m_config.topology == IntersectionTopology::Lanes_2x2) ? 7.0 : 10.5;
+    const double offset = 1.5;
+
     const std::array<Vector2D, 4> positions = {
-        Vector2D(-8.5, -8.5), Vector2D(8.5, -8.5), Vector2D(8.5, 8.5), Vector2D(-8.5, 8.5)
-};
+        Vector2D(-halfNS - offset, -halfEW - offset),
+        Vector2D(halfNS + offset, -halfEW - offset),
+        Vector2D(halfNS + offset, halfEW + offset),
+        Vector2D(-halfNS - offset, halfEW + offset)
+    };
 
-for (int i = 0; i < 4; ++i) {
-    PedestrianTrafficLightRenderData light;
-    light.id = i + 1;
-    light.position = positions[i];
-    light.corner = i;
+    for (int i = 0; i < 4; ++i) {
+        PedestrianTrafficLightRenderData light;
+        light.id = i + 1;
+        light.position = positions[i];
+        light.corner = i;
 
-    if (parallelAllowed) {
-        light.signalNS = (eastRed && westRed) ? PedestrianLightSignal::Green : PedestrianLightSignal::Red;
-        light.signalEW = (northRed && southRed) ? PedestrianLightSignal::Green : PedestrianLightSignal::Red;
-    } else {
-        light.signalNS = allRed ? PedestrianLightSignal::Green : PedestrianLightSignal::Red;
-        light.signalEW = allRed ? PedestrianLightSignal::Green : PedestrianLightSignal::Red;
+        if (parallelAllowed) {
+            light.signalNS = (eastRed && westRed && !anyLeftArrowGreen) ? PedestrianLightSignal::Green : PedestrianLightSignal::Red;
+            light.signalEW = (northRed && southRed && !anyLeftArrowGreen) ? PedestrianLightSignal::Green : PedestrianLightSignal::Red;
+        } else {
+            light.signalNS = allRed ? PedestrianLightSignal::Green : PedestrianLightSignal::Red;
+            light.signalEW = allRed ? PedestrianLightSignal::Green : PedestrianLightSignal::Red;
+        }
+        lights.push_back(light);
     }
-    lights.push_back(light);
-}
 }
 
 void SimulationEngine::start() {
@@ -487,10 +505,9 @@ void SimulationEngine::step(double dt) {
             }
         }
 
-        constexpr double kSpawnSpacing = 7.0; // Габарит авто 4.5м + дистанция 2.5м
+        constexpr double kSpawnSpacing = 7.0;
 
         if (rearmostVehicle != nullptr && maxDistFromCenter >= 93.0) {
-            // Очередь растянулась за экран: спавним новую машину строго позади хвоста за пределами видимости
             Vector2D newPos = rearmostVehicle->getPosition();
             if (dir == DirectionId::North) newPos.y += kSpawnSpacing;
             else if (dir == DirectionId::South) newPos.y -= kSpawnSpacing;
