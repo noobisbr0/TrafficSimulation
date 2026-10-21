@@ -30,12 +30,13 @@ MainWindow::MainWindow(QWidget* parent)
 
     auto* rightDock = new QDockWidget("Параметры", this);
     rightDock->setWidget(paramPanel);
-    rightDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+    rightDock->setFeatures(QDockWidget::DockWidgetMovable);
     rightDock->setMinimumWidth(280);
     rightDock->setMaximumWidth(320);
     addDockWidget(Qt::RightDockWidgetArea, rightDock);
 
     auto* leftDock = new QDockWidget("Управление и Аналитика", this);
+    leftDock->setFeatures(QDockWidget::DockWidgetMovable);
     auto* leftWidget = new QWidget();
     auto* leftLayout = new QVBoxLayout(leftWidget);
 
