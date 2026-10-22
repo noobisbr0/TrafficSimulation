@@ -19,7 +19,7 @@ struct SimulationConfig {
     IntersectionTopology topology{IntersectionTopology::Lanes_2x2};
 
     bool permitLeftTurnFilter{true};
-    bool hasRightTurnArrow{false};
+    bool allowParallelPeds{false};
 
     double totalCycleSec{90.0};
     double visibilityDistance{60.0};

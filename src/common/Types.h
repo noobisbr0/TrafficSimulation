@@ -34,8 +34,8 @@ struct TrafficLightRenderData {
     LightColor mainColor{LightColor::Red};
     bool hasLeftArrow{false};
     bool leftArrowGreen{false};
-    bool hasRightArrow{false};
-    bool rightArrowGreen{false};
+    bool allowsParallelPeds{false};
+    bool parallelPedsGreen{false};
 };
 
 enum class PedestrianLightSignal {
