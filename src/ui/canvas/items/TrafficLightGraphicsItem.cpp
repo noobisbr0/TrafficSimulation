@@ -25,7 +25,6 @@ void TrafficLightGraphicsItem::paint(QPainter* painter, const QStyleOptionGraphi
         } else if (lensPosition == LightColor::Yellow) {
             isActive = (m_data.mainColor == LightColor::Yellow || m_data.mainColor == LightColor::RedYellow);
         } else if (lensPosition == LightColor::Green) {
-            // Зеленый включается исключительно при сигнале Green
             isActive = (m_data.mainColor == LightColor::Green);
         }
 

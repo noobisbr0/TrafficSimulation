@@ -56,7 +56,6 @@ void DynamicController::updateMetrics(const std::vector<Vehicle>& vehicles) {
         const double y = v.getPosition().y;
         const double speedMs = v.getSpeed() / 3.6;
 
-        // Фиксация машин на самом перекрестке (включая поворачивающих налево)
         if (x > -(hwNS + 2.0) && x < (hwNS + 2.0) && y > -(hwEW + 2.0) && y < (hwEW + 2.0)) {
             m_carsInIntersection++;
         }
@@ -67,12 +66,6 @@ void DynamicController::updateMetrics(const std::vector<Vehicle>& vehicles) {
         if (dist < 0.0 || dist > m_config.visibilityDistance) {
             continue;
         }
-
-        // Индексы подходов:
-        // dir == South (находится на севере, y < 0) -> 0 (Северный подход)
-        // dir == North (находится на юге, y > 0)   -> 1 (Южный подход)
-        // dir == East  (находится на востоке, x > 0) -> 2 (Восток)
-        // dir == West  (находится на западе, x < 0)  -> 3 (Запад)
         int idx = 0;
         if (dir == DirectionId::South) idx = 0;
         else if (dir == DirectionId::North) idx = 1;
@@ -93,7 +86,6 @@ bool DynamicController::canSwitchFromGreen() const {
         return m_currentGreenTime >= m_config.pedestrianGreenSec;
     }
 
-    // 1. Не переключать фазу, пока машина не завершила левый поворот в центре
     if (m_carsInIntersection > 0 && m_currentGreenTime < 45.0) {
         return false;
     }
@@ -125,23 +117,19 @@ bool DynamicController::canSwitchFromGreen() const {
         }
     }
 
-    // 2. Адаптивное минимальное время зеленого (расчет на прохождение волны разряжения очереди)
     const double minGreen = std::max(12.0, 4.0 + 1.8 * activeQueue);
     if (m_currentGreenTime < minGreen) {
         return false;
     }
 
-    // 3. Rest-in-Green: если на конкурирующих направлениях пусто — держим зеленый дальше
     if (competingQueue == 0) {
         return false;
     }
 
-    // 4. Очередь на текущем направлении полностью рассосалась
     if (activeQueue == 0) {
         return true;
     }
 
-    // 5. Предел удержания зеленого при наличии пробки на поперечном направлении
     constexpr double kMaxGreenSec = 45.0;
     if (m_currentGreenTime >= kMaxGreenSec) {
         return true;
@@ -151,25 +139,18 @@ bool DynamicController::canSwitchFromGreen() const {
 }
 
 DynamicController::LogicalPhase DynamicController::determineNextPhase() const {
-    // Пешеходная фаза включается ТОЛЬКО если:
-    // 1) Нет параллельных пешеходов (hasRightTurnArrow == false)
-    // 2) Автомобили НЕ стоят в огромной пробке (суммарная очередь <= 2 авто)
-    // 3) Прошло не менее 120 секунд с прошлой пешеходной фазы
-    // 4) Центр перекрестка чист
-    if (!m_config.hasRightTurnArrow && m_timeSinceLastPedPhase >= 120.0 &&
+    if (!m_config.allowParallelPeds && m_timeSinceLastPedPhase >= 120.0 &&
         m_totalWaitingQueue <= 2 && m_carsInIntersection == 0) {
         return LogicalPhase::Pedestrian;
     }
 
     if (m_config.permitLeftTurnFilter) {
-        // ВСТР ВКЛ: чередование коридоров NS и EW
         if (m_currentPhase == LogicalPhase::NS_Concurrent) {
             return LogicalPhase::EW_Concurrent;
         }
         return LogicalPhase::NS_Concurrent;
     }
 
-    // ВСТР ВЫКЛ: бессикловый выбор подхода с наибольшей реальной очередью стоящих авто
     const LogicalPhase allSplits[4] = {
         LogicalPhase::North_Split,
         LogicalPhase::South_Split,
@@ -189,7 +170,6 @@ DynamicController::LogicalPhase DynamicController::determineNextPhase() const {
         }
     }
 
-    // Если все остальные направления пусты, не тратим время на переключение
     if (maxQueue == 0) {
         return m_currentPhase;
     }
@@ -210,7 +190,6 @@ void DynamicController::applyPhaseLights(std::vector<TrafficLight>& trafficLight
     } else if (m_state == ControllerState::AllRed) {
         targetColor = LightColor::Red;
     } else if (m_state == ControllerState::RedYellow) {
-        // Оставляем только желтый цвет перед включением зеленого
         targetPhase = m_nextPhase;
         targetColor = LightColor::Yellow;
     }
@@ -230,11 +209,9 @@ void DynamicController::applyPhaseLights(std::vector<TrafficLight>& trafficLight
             case LogicalPhase::EW_Concurrent:
                 if (dir == DirectionId::East || dir == DirectionId::West) isActivePhase = true;
                 break;
-            // Северный светофор (сверху) открывается для Северного подхода
             case LogicalPhase::North_Split:
                 if (dir == DirectionId::North) { isActivePhase = true; isLeftActivePhase = true; }
                 break;
-            // Южный светофор (снизу) открывается для Южного подхода
             case LogicalPhase::South_Split:
                 if (dir == DirectionId::South) { isActivePhase = true; isLeftActivePhase = true; }
                 break;
@@ -282,10 +259,8 @@ void DynamicController::update(double dt, std::vector<TrafficLight>& trafficLigh
             m_stateTime = 0.0;
         }
     } else if (m_state == ControllerState::AllRed) {
-        // Если кто-то еще завершает маневр на перекрестке — ждем его съезда
         if (m_stateTime >= 1.5) {
             if (m_carsInIntersection > 0 && m_stateTime < 5.0) {
-                // ждем очистки центра перекрестка
             } else {
                 m_state = ControllerState::RedYellow;
                 m_stateTime = 0.0;
