@@ -24,7 +24,7 @@ struct Scenario {
 static void applyFixedCycle(SimulationConfig& c, double cycleSec) {
     double overhead = 2.0 * (3.0 + 1.5);
     if (!c.permitLeftTurnFilter) overhead += 2.0 * 5.0;
-    if (!c.hasRightTurnArrow)    overhead += c.pedestrianGreenSec;
+    if (!c.allowParallelPeds)    overhead += c.pedestrianGreenSec;
 
     const int totalGreen = static_cast<int>(std::lround(cycleSec - overhead));
     c.north.greenZ = totalGreen / 2;
@@ -39,7 +39,7 @@ static SimulationConfig makeConfig(const Scenario& s) {
     c.north.flowP = s.flowNS;  c.south.flowP = s.flowNS;
     c.east.flowP  = s.flowEW;  c.west.flowP  = s.flowEW;
     c.permitLeftTurnFilter = s.permitLeft;
-    c.hasRightTurnArrow = s.parallelPeds;   // в движке этот флаг = "пешеходы параллельно с авто"
+    c.allowParallelPeds = s.parallelPeds;   // в движке этот флаг = "пешеходы параллельно с авто"
     c.pedestrianFlow = s.pedFlow;
     if (s.fixedCycleSec > 0.0) applyFixedCycle(c, s.fixedCycleSec);
     return c;

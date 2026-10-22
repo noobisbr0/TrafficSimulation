@@ -272,7 +272,7 @@ void ParametersPanel::emitConfig() {
     config.mode = m_rbStatic->isChecked() ? ControllerMode::Static : ControllerMode::Dynamic;
     config.topology = static_cast<IntersectionTopology>(m_cbTopology->currentIndex());
     config.permitLeftTurnFilter = m_cbLeftTurn->isChecked();
-    config.hasRightTurnArrow = m_cbParallelPeds->isChecked();
+    config.allowParallelPeds = m_cbParallelPeds->isChecked();
 
     config.totalCycleSec = m_slTotalT->value();
     config.visibilityDistance = m_slDistD->value();
