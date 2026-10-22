@@ -29,7 +29,7 @@ void StaticController::setMainColors(
             trafficLight.setColor(eastWestColor);
         }
         trafficLight.setLeftArrow(!m_config.permitLeftTurnFilter, false);
-        trafficLight.setRightArrowGreen(false);
+        trafficLight.setParallelPedsGreen(false);
     }
 }
 
@@ -182,7 +182,7 @@ void StaticController::update(
 
     case Phase::EastWestYellow:
         if (m_config.permitLeftTurnFilter) {
-            if (!m_config.hasRightTurnArrow) {
+            if (!m_config.allowParallelPeds) {
                 m_phase = Phase::AllRedPedestrian;
             } else {
                 m_phase = Phase::NorthSouthRedYellow;
@@ -193,7 +193,7 @@ void StaticController::update(
         break;
 
     case Phase::EastWestLeftArrow:
-        if (!m_config.hasRightTurnArrow) {
+        if (!m_config.allowParallelPeds) {
             m_phase = Phase::AllRedPedestrian;
         } else {
             m_phase = Phase::NorthSouthRedYellow;

@@ -69,7 +69,7 @@ void SimulationEngine::updateTrafficLights(double dt) {
 
     for (TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
         const bool green = trafficLight.getColor() == LightColor::Green;
-        trafficLight.setRightArrow(m_config.hasRightTurnArrow, m_config.hasRightTurnArrow && green);
+        trafficLight.setParallelPeds(m_config.allowParallelPeds, m_config.allowParallelPeds && green);
     }
 }
 
@@ -317,7 +317,7 @@ void SimulationEngine::updatePedestrians(double dt) {
     for (const TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
         bool red = (trafficLight.getColor() == LightColor::Red)
         && !trafficLight.isLeftArrowGreen()
-            && !trafficLight.isRightArrowGreen();
+            && !trafficLight.isParallelPedsGreen();
 
         if (trafficLight.isLeftArrowGreen()) {
             anyLeftArrowGreen = true;
@@ -330,7 +330,7 @@ void SimulationEngine::updatePedestrians(double dt) {
     }
 
     bool allRed = northRed && southRed && eastRed && westRed;
-    bool parallelAllowed = m_config.hasRightTurnArrow;
+    bool parallelAllowed = m_config.allowParallelPeds;
 
     for (Pedestrian& pedestrian : m_pedestrians) {
         bool canCross = false;
@@ -411,7 +411,7 @@ void SimulationEngine::updatePedestrianLights(std::vector<PedestrianTrafficLight
     for (const TrafficLight& trafficLight : m_intersection.getTrafficLights()) {
         bool red = (trafficLight.getColor() == LightColor::Red)
         && !trafficLight.isLeftArrowGreen()
-            && !trafficLight.isRightArrowGreen();
+            && !trafficLight.isParallelPedsGreen();
 
         if (trafficLight.isLeftArrowGreen()) {
             anyLeftArrowGreen = true;
@@ -424,7 +424,7 @@ void SimulationEngine::updatePedestrianLights(std::vector<PedestrianTrafficLight
     }
 
     bool allRed = northRed && southRed && eastRed && westRed;
-    bool parallelAllowed = m_config.hasRightTurnArrow;
+    bool parallelAllowed = m_config.allowParallelPeds;
 
     const double halfNS = (m_config.topology == IntersectionTopology::Lanes_3x3) ? 10.5 : 7.0;
     const double halfEW = (m_config.topology == IntersectionTopology::Lanes_2x2) ? 7.0 : 10.5;
@@ -608,8 +608,8 @@ SimulationSnapshot SimulationEngine::getSnapshot() const {
         renderData.mainColor = trafficLight.getColor();
         renderData.hasLeftArrow = trafficLight.hasLeftArrow();
         renderData.leftArrowGreen = trafficLight.isLeftArrowGreen();
-        renderData.hasRightArrow = trafficLight.hasRightArrow();
-        renderData.rightArrowGreen = trafficLight.isRightArrowGreen();
+        renderData.allowsParallelPeds = trafficLight.allowsParallelPeds();
+        renderData.parallelPedsGreen = trafficLight.isParallelPedsGreen();
         snapshot.trafficLights.push_back(renderData);
     }
 

@@ -6,8 +6,8 @@ TrafficLight::TrafficLight(int id, DirectionId direction)
     m_color(LightColor::Red),
     m_hasLeftArrow(false),
     m_leftArrowGreen(false),
-    m_hasRightArrow(false),
-    m_rightArrowGreen(false) {
+    m_allowsParallelPeds(false),
+    m_parallelPedsGreen(false) {
 }
 
 int TrafficLight::getId() const {
@@ -34,16 +34,16 @@ void TrafficLight::setLeftArrowGreen(bool green) {
     m_leftArrowGreen = green;
 }
 
-bool TrafficLight::hasRightArrow() const {
-    return m_hasRightArrow;
+bool TrafficLight::allowsParallelPeds() const {
+    return m_allowsParallelPeds;
 }
 
-bool TrafficLight::isRightArrowGreen() const {
-    return m_rightArrowGreen;
+bool TrafficLight::isParallelPedsGreen() const {
+    return m_parallelPedsGreen;
 }
 
-void TrafficLight::setRightArrowGreen(bool green) {
-    m_rightArrowGreen = green;
+void TrafficLight::setParallelPedsGreen(bool green) {
+    m_parallelPedsGreen = green;
 }
 
 void TrafficLight::setColor(LightColor color) {
@@ -55,7 +55,7 @@ void TrafficLight::setLeftArrow(bool hasArrow, bool isGreen) {
     m_leftArrowGreen = isGreen;
 }
 
-void TrafficLight::setRightArrow(bool hasArrow, bool isGreen) {
-    m_hasRightArrow = hasArrow;
-    m_rightArrowGreen = isGreen;
+void TrafficLight::setParallelPeds(bool hasArrow, bool isGreen) {
+    m_allowsParallelPeds = hasArrow;
+    m_parallelPedsGreen = isGreen;
 }

@@ -13,13 +13,13 @@ public:
     bool hasLeftArrow() const;
     bool isLeftArrowGreen() const;
     void setLeftArrowGreen(bool green);
-    bool hasRightArrow() const;
-    bool isRightArrowGreen() const;
-    void setRightArrowGreen(bool green);
+    bool allowsParallelPeds() const;
+    bool isParallelPedsGreen() const;
+    void setParallelPedsGreen(bool green);
 
     void setColor(LightColor color);
     void setLeftArrow(bool hasArrow, bool isGreen);
-    void setRightArrow(bool hasArrow, bool isGreen);
+    void setParallelPeds(bool hasArrow, bool isGreen);
 
 private:
     int m_id;
@@ -28,6 +28,6 @@ private:
     LightColor m_color;
     bool m_hasLeftArrow;
     bool m_leftArrowGreen;
-    bool m_hasRightArrow;
-    bool m_rightArrowGreen;
+    bool m_allowsParallelPeds;
+    bool m_parallelPedsGreen;
 };
